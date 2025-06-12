@@ -1,0 +1,13 @@
+# Deep Research Agent Dependencies
+
+# Core Framework
+semantic-kernel==1.32.1
+
+# Search and Web APIs
+tavily-python==0.7.5
+azure-search-documents==11.5.2
+azure-identity==1.23.0
+openai==1.86.0
+
+# Configuration and Environment
+python-dotenv==1.1.0

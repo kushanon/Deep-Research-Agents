@@ -1,0 +1,93 @@
+# Research Agent Configuration - Anonymized Version
+# Only includes configuration keys that are actually used in the codebase
+
+# === CORE SYSTEM CONFIGURATION ===
+# Company information (used by PromptManager)
+system:
+  company:
+    name: "Contoso Corporation"          # English company name - used in company context
+    display_name: "コントーソ"        # Japanese display name - used in company context
+    language: "ja"                       # Default language - used for language detection
+
+# === DATA SOURCES CONFIGURATION ===
+# Azure AI Search index configuration (used by get_document_type_config)
+data_sources:
+  # Web search configuration
+  web_search:
+    enabled: false                        # Enable/disable web search functionality
+    fallback_enabled: true               # Enable web search as fallback when other sources fail
+    max_results: 10                      # Maximum number of results from web search
+    timeout: 30                          # Timeout in seconds for web search requests
+    
+  document_types:
+    # Required for search functionality - minimal configuration
+    category_a_documents:
+      index_name: "search-index-source-1"                               # Azure AI Search index name
+      semantic_config: "search-index-source-1-semantic-configuration"   # Semantic search configuration
+      vector_field: "content_embedding"                                   # Vector search field
+      key_fields:                                                         # Key fields for search
+        - "record_id"
+        - "document_title"
+        - "content_text"
+      content_fields:                                                     # Content fields for search
+        - "content_text"
+        - "details"
+        - "summary"
+        - "analysis_details"
+    
+    category_b_documents:
+      index_name: "search-index-source-2"                           # Azure AI Search index name
+      semantic_config: "search-index-source-2-semantic-configuration" # Semantic search configuration
+      vector_field: "content_embedding"                                   # Vector search field
+      key_fields:                                                         # Key fields for search
+        - "record_id"
+        - "document_title"
+        - "content_text"
+      content_fields:                                                     # Content fields for search
+        - "content_text"
+        - "details"
+        - "summary"
+        - "analysis_details"
+    
+    category_c_documents:
+      index_name: "search-index-source-3"                                # Azure AI Search index name
+      semantic_config: "search-index-source-3-semantic-configuration"  # Semantic search configuration
+      vector_field: "text_vector"                                       # Vector search field
+      key_fields:                                                       # Key fields for search
+        - "parent_id"
+        - "chunk"
+      content_fields:                                                   # Content fields for search
+        - "chunk"
+        - "content"
+        - "text"
+    
+    category_d_documents:
+      index_name: "search-index-source-4"                         # Azure AI Search index name
+      semantic_config: "search-index-source-4-semantic-configuration" # Semantic search configuration
+      vector_field: "content_embedding"                                 # Vector search field
+      key_fields:                                                       # Key fields for search
+        - "document_title"
+        - "content_text"
+      content_fields:                                                   # Content fields for search
+        - "content_text"
+        - "content"
+
+# === AGENT CONFIGURATIONS ===
+# Agent behavior settings
+agents:
+  # Temperature variations (used by temperature management)
+  temperature_variations:
+    conservative:
+      temp: 0.2
+    balanced:
+      temp: 0.6
+    creative:
+      temp: 0.9
+  
+  # Credibility critic assessment (used by credibility critic agent)
+  credibility_critic:
+    assessment:
+      score_ranges:
+        high: "8.0-10.0"
+        medium: "5.0-7.9"
+        low: "1.0-4.9"
