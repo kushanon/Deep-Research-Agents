@@ -141,4 +141,24 @@ class TemperatureManager:
         Returns:
             Temperature-specific instruction prompt
         """
-        return get_temperature_researcher_prompt(temperature, approach)
+        # Map temperature value to temperature type string
+        temperature_type = cls._get_temperature_type_from_value(temperature)
+        return get_temperature_researcher_prompt(temperature_type)
+
+    @classmethod
+    def _get_temperature_type_from_value(cls, temperature: float) -> str:
+        """
+        Map temperature value to temperature type string.
+        
+        Args:
+            temperature: Temperature value (0.0-1.0)
+            
+        Returns:
+            Temperature type string for prompt generation
+        """
+        if temperature <= 0.3:
+            return "conservative"
+        elif temperature <= 0.7:
+            return "balanced"
+        else:
+            return "creative"

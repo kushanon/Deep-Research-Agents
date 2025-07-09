@@ -240,8 +240,6 @@ class LeadResearcherAgent(ChatCompletionAgent):
         """Override invoke_stream to disable problematic on_intermediate_message callback."""
         logger = logging.getLogger(__name__)
         logger.info("🎯 ===== LeadResearcherAgent.invoke_stream called =====")
-        logger.info(
-            "🔄 Using standard ChatCompletionAgent invoke_stream with disabled intermediate message callback")
 
         try:
             # Use the parent class's standard invoke_stream method but disable the callback

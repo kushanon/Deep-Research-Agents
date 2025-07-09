@@ -354,6 +354,7 @@ class ProjectConfig:
             name: AgentTemperatureConfig(
                 **config) for name,
             config in temp_variations.items()}
+        self.temperature_variations = self.agents  # Alias for easy access
 
         self.researcher_config = ResearcherConfig(
             **agents_config.get('researcher', {}))

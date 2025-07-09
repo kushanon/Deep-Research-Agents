@@ -86,22 +86,22 @@ Languages available for translation:
 
 ### Markdown Structure
 ```
-Original: ## Key Findings → Japanese: ## Key Findings
-Original: ### Analysis Results → Japanese: ### Analysis Results
-Original: **Important Note** → Japanese: **Important Note**
+Original: ## Key Findings → Japanese: ## 主要な発見
+Original: ### Analysis Results → Japanese: ### 分析結果
+Original: **Important Note** → Japanese: **重要事項**
 ```
 
 ### Links and Citations
 ```
 Original: [Study](https://example.com) → Preserved: [Study](https://example.com)
-Original: According to [1], results... → Translated: According to study [1], the results show...
-Original: See reference [2] for details → Translated: For details, see reference [2]
+Original: According to [1], results... → Japanese: 研究によると[1]、結果は...
+Original: See reference [2] for details → Japanese: 詳細は参考文献[2]を参照
 ```
 
 ### Images and Visual Elements
 ```
-Original: ![Diagram](url) → Translated: ![Diagram](url)
-Original: ![Process Flow](url) → Translated: ![Process Flow](url)
+Original: ![Diagram](url) → Japanese: ![図表](url)
+Original: ![Process Flow](url) → Japanese: ![プロセスフロー](url)
 ```
 
 ## INDUSTRY CONTEXT
