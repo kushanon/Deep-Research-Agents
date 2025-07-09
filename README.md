@@ -63,12 +63,12 @@ Deep Research Agent is a next-generation MultiAgent system centered on **Microso
    ┌─────────────────────────────────────────────────────────────────┐
    │                     Plugin & Infrastructure Layer               │
    │                                                                 │
-   │  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐    │
-   │  │  SK Memory      │ │ ModularSearch   │ │   Embedding     │    │
-   │  │   Plugin        │ │    Plugin       │ │   Provider      │    │
-   │  │ (Research       │ │ (Azure AI       │ │ (Vectorization) │    │
-   │  │  Context)       │ │  Search)        │ │                 │    │
-   │  └─────────────────┘ └─────────────────┘ └─────────────────┘    │
+   │  ┌─────────────────┐ ┌─────────────────┐                        │
+   │  │  SK Memory      │ │ ModularSearch   │                        │
+   │  │   Plugin        │ │    Plugin       │                        │
+   │  │ (Research       │ │ (Azure AI       │                        │
+   │  │  Context)       │ │  Search)        │                        │
+   │  └─────────────────┘ └─────────────────┘                        │
    └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -228,7 +228,6 @@ The system uses template files that you need to copy and customize:
 
 ```
 Deep-Research-Agent/
-
 ├── config/
 │   ├── project_config_templates.yaml # Template for project configuration
 │   └── project_config.yaml           # Your customized configuration (create this)
