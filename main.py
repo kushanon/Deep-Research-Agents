@@ -278,7 +278,7 @@ async def main() -> None:
         await agent.initialize()
 
         # Define research task for internal R&D document analysis
-        user_task = args.query or "Azure OpenAIって何？"
+        user_task = args.query or "What is Azure OpenAI?"
 
         # Execute research
         logger.info("=" * 60)
