@@ -182,6 +182,30 @@ class MemoryManager:
             self.logger.info(
                 f"[MEMORY SEARCH] Min relevance: {relevance_threshold}")
 
+            # Check if memory store has any data before searching
+            try:
+                # Get collections to check if any exist
+                collections = await self.memory_store.get_collections()
+                if not collections or self.collection_name not in collections:
+                    self.logger.info(f"[MEMORY SEARCH] No data in memory collection '{self.collection_name}' - returning empty results")
+                    return []
+                
+                # Try to get at least one record to verify collection has data
+                try:
+                    # Use a small batch size to check for existence
+                    sample_records = await self.memory_store.get_batch(self.collection_name, [], batch_size=1)
+                    if not sample_records:
+                        self.logger.info(f"[MEMORY SEARCH] Memory collection '{self.collection_name}' is empty - returning empty results")
+                        return []
+                except Exception as batch_error:
+                    # If get_batch doesn't work as expected, try a different approach
+                    self.logger.debug(f"[MEMORY SEARCH] get_batch failed: {batch_error}, trying alternative check")
+                    # Proceed with search, but with enhanced error handling
+                    
+            except Exception as check_error:
+                self.logger.warning(f"[MEMORY SEARCH] Error checking memory store state: {check_error}")
+                # Continue with search attempt but be prepared for failure
+
             results = await self.semantic_memory.search(
                 collection=self.collection_name,
                 query=query,
@@ -202,10 +226,26 @@ class MemoryManager:
                     filtered_count += 1
                     continue
 
-                # Get text content from the metadata
-                content_list.append(result.Metadata.Text)
-                self.logger.debug(f"[MEMORY SEARCH] Added result {
-                                  i + 1}: {result.Metadata.Text[:50]}...")
+                # Get text content from the result
+                # Try different attribute names for compatibility
+                text_content = None
+                if hasattr(result, 'text'):
+                    text_content = result.text
+                elif hasattr(result, 'metadata') and hasattr(result.metadata, 'text'):
+                    text_content = result.metadata.text
+                elif hasattr(result, 'Metadata') and hasattr(result.Metadata, 'Text'):
+                    text_content = result.Metadata.Text
+                else:
+                    # Fallback: try to get text from string representation
+                    text_content = str(result)
+                
+                if text_content:
+                    content_list.append(text_content)
+                    self.logger.debug(f"[MEMORY SEARCH] Added result {
+                                      i + 1}: {str(text_content)[:50]}...")
+                else:
+                    self.logger.warning(f"[MEMORY SEARCH] Could not extract text from result {i + 1}")
+                    self.logger.debug(f"[MEMORY SEARCH] Result attributes: {dir(result)}")
 
             self.logger.info(f"[MEMORY SEARCH] Search completed")
             self.logger.info(
@@ -217,8 +257,18 @@ class MemoryManager:
             return content_list
 
         except Exception as e:
+            error_msg = str(e)
             self.logger.error(f"[MEMORY SEARCH] Memory search failed: {e}")
             self.logger.error(f"[MEMORY SEARCH] Query was: {query[:100]}...")
+            
+            # Specific handling for common embedding/reshape errors
+            if "reshape array of size 0" in error_msg:
+                self.logger.warning("[MEMORY SEARCH] Empty memory store detected - no vectors to search")
+            elif "embedding" in error_msg.lower():
+                self.logger.warning("[MEMORY SEARCH] Embedding generation or search error")
+            elif "vector" in error_msg.lower():
+                self.logger.warning("[MEMORY SEARCH] Vector operation error - possibly empty index")
+            
             return []
 
     def _should_filter_result(
@@ -244,9 +294,25 @@ class MemoryManager:
             return False
 
         try:
-            # Access metadata through the correct property name
-            additional_metadata = getattr(result.Metadata, 'AdditionalMetadata', None) or "{}"
-            metadata = json.loads(additional_metadata)
+            # Access metadata through the correct property name with robust handling
+            additional_metadata = None
+            
+            # Try different attribute paths for compatibility
+            if hasattr(result, 'metadata') and hasattr(result.metadata, 'additional_metadata'):
+                additional_metadata = result.metadata.additional_metadata
+            elif hasattr(result, 'Metadata') and hasattr(result.Metadata, 'AdditionalMetadata'):
+                additional_metadata = result.Metadata.AdditionalMetadata
+            elif hasattr(result, 'additional_metadata'):
+                additional_metadata = result.additional_metadata
+            elif hasattr(result, 'AdditionalMetadata'):
+                additional_metadata = result.AdditionalMetadata
+            
+            # Parse metadata safely
+            if additional_metadata:
+                metadata = json.loads(additional_metadata)
+            else:
+                metadata = {}
+                
             result_type = metadata.get("type", "unknown")
             result_source = metadata.get("source", "unknown")
 

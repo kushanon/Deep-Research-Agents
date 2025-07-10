@@ -64,7 +64,7 @@ Deep Research Agents is a next-generation MultiAgent system centered on **Micros
    │                     Plugin & Infrastructure Layer               │
    │                                                                 │
    │  ┌─────────────────┐ ┌─────────────────┐                        │
-   │  │  SK Memory      │ │ ModularSearch   │                        │
+   │  │  Memory        │ │ ModularSearch   │                        │
    │  │   Plugin        │ │    Plugin       │                        │
    │  │ (Research       │ │ (Azure AI       │                        │
    │  │  Context)       │ │  Search)        │                        │

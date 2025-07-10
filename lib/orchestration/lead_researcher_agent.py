@@ -102,13 +102,13 @@ class LeadResearcherAgent(ChatCompletionAgent):
         object.__setattr__(self, '_runtime', None)
         object.__setattr__(self, '_research_executor', ResearchExecutor())
 
-        # Extract SK memory plugin from this agent's plugins to share with
+        # Extract memory plugin from this agent's plugins to share with
         # internal agents
-        sk_memory_plugin = self._find_sk_memory_plugin(plugins)
-
+        memory_plugin = self._find_memory_plugin(plugins)
+        self._memory_plugin = memory_plugin
         # Create initial research agents
         research_agents = self._create_initial_research_agents(
-            sk_memory_plugin)
+            memory_plugin)
         object.__setattr__(self, '_research_agents', research_agents)
 
         logger.info("🔬 LeadResearcherAgent initialization completed")
@@ -116,25 +116,17 @@ class LeadResearcherAgent(ChatCompletionAgent):
             f"🔌 Total plugins registered: {
                 len(plugins)} (including ParallelResearchPlugin)")
 
-    def _find_sk_memory_plugin(self, plugins: List[Any]) -> Optional[Any]:
-        """Find SK memory plugin from the provided plugins list."""
+    def _find_memory_plugin(self, plugins: List[Any]) -> Optional[Any]:
+        """Find memory plugin from the provided plugins list."""
         logger = logging.getLogger(__name__)
-
-        if plugins:
-            for plugin in plugins:
-                if hasattr(
-                        plugin,
-                        'session_id') and hasattr(
-                        plugin,
-                        'store_memory'):
-                    logger.info(
-                        f"🔗 Found SK memory plugin to share with internal agents: {
-                            type(plugin).__name__}")
-                    return plugin
+        for plugin in plugins:
+            if plugin.__class__.__name__ == "MemoryPlugin" or "memory" in plugin.__class__.__name__.lower():
+                logger.info("🔗 Found MemoryPlugin in plugins")
+                return plugin
         return None
 
     def _create_initial_research_agents(
-            self, sk_memory_plugin: Any) -> List[Agent]:
+            self, memory_plugin: Any) -> List[Agent]:
         """Create initial set of research agents."""
         logger = logging.getLogger(__name__)
         config = get_config()
@@ -160,9 +152,9 @@ class LeadResearcherAgent(ChatCompletionAgent):
                     1}")
             # Create plugins list for each research agent
             internal_plugins = [ModularSearchPlugin()]
-            if sk_memory_plugin:
-                internal_plugins.append(sk_memory_plugin)
-                logger.info(f"🔗 Added SK memory plugin to RESEARCHER{i + 1}")
+            if memory_plugin:
+                internal_plugins.append(memory_plugin)
+                logger.info(f"🔗 Added memory plugin to RESEARCHER{i + 1}")
 
             # Create instrumented service to log LLM calls
             service = get_azure_openai_service(
@@ -219,7 +211,8 @@ class LeadResearcherAgent(ChatCompletionAgent):
             self._research_agents,
             user_input,
             use_temperature_variation,
-            lead_agent=self
+            lead_agent=self,
+            memory_plugin=self._memory_plugin,
         )
 
     @trace_agent_invocation

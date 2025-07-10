@@ -8,8 +8,7 @@ from semantic_kernel.agents import ChatCompletionAgent
 
 from .citation import CitationPlugin as CitationAgentPlugin
 from .citation import CustomCitationAgent as CitationAgent
-from .memory import (SharedMemoryPluginSK, SKMemoryPlugin,
-                     create_azure_openai_text_embedding)
+from .memory import MemoryPlugin, MemoryManager
 from .orchestration import LeadResearcherAgent
 # Updated to use new modular prompts structure
 from .prompts.agents.citation import CITATION_AGENT_PROMPT
@@ -31,9 +30,8 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 
-async def create_agents_with_sk_memory(
-    session_id: str,
-    project_id: str = ""
+async def create_agents_with_memory(
+    memory_plugin: MemoryPlugin,
 ) -> Dict[str, ChatCompletionAgent]:
     """
     Create research agents using Semantic Kernel memory system.
@@ -52,39 +50,28 @@ async def create_agents_with_sk_memory(
     from .config import get_config
     config = get_config()
 
-    # Create Azure OpenAI embedding generator
-    embedding_generator = create_azure_openai_text_embedding(
-        api_key=config.azure_openai_api_key,
-        endpoint=config.azure_openai_endpoint,
-        api_version=config.azure_openai_api_version,
-        deployment_name=config.azure_openai_embedding_deployment,
-        service_id="agents_embedding"
-    )    # Create SK memory plugin
-    sk_memory = SKMemoryPlugin(embedding_generator, session_id, project_id)
-    await sk_memory.initialize()
-
     agents = {
         # Use ONLY LeadResearcherAgent to force internal orchestration
         "lead_researcher": LeadResearcherAgent(
             agent_count=3,
-            # Enable SK memory for internal research agents - INTERNAL
+            # Enable memory for internal research agents - INTERNAL
             # DOCUMENTS ONLY
-            plugins=[ModularSearchPlugin(), sk_memory]
+            plugins=[ModularSearchPlugin(), memory_plugin]
         ),
         "credibility_critic": ChatCompletionAgent(
             name="CredibilityCriticAgent",
-            description="Analyzes credibility and coverage of internal search results using advanced LLM analysis, with ability to search for additional supporting documents. Uses SK memory for analysis context.",
+            description="Analyzes credibility and coverage of internal search results using advanced LLM analysis, with ability to search for additional supporting documents. Uses memory for analysis context.",
             instructions=CREDIBILITY_CRITIC_PROMPT,
             service=get_azure_openai_service(config.get_model_config("gpt41")),
-            plugins=[ModularSearchPlugin(), sk_memory]
+            plugins=[ModularSearchPlugin(), memory_plugin]  # Add memory for knowledge preservation
         ),
 
         "citation_agent": CitationAgent(
             name="CitationAgent",
-            description="Processes research documents and reports to identify specific locations for citations, ensuring all claims are properly attributed to their sources. Uses SK memory for citation context.",
+            description="Processes research documents and reports to identify specific locations for citations, ensuring all claims are properly attributed to their sources. Uses memory for citation context.",
             instructions=CITATION_AGENT_PROMPT,
             service=get_azure_openai_service(config.get_model_config("gpt41")),
-            plugins=[CitationAgentPlugin(), sk_memory]
+            plugins=[CitationAgentPlugin()]
         ),
 
         "summarizer": ChatCompletionAgent(
@@ -98,10 +85,10 @@ async def create_agents_with_sk_memory(
 
         "report_writer": ChatCompletionAgent(
             name="ReportWriterAgent",
-            description="Creates structured markdown reports with proper citations, hyperlinks, and visual content. Uses SK memory for context and component storage.",
+            description="Creates structured markdown reports with proper citations, hyperlinks, and visual content. Uses memory for context and component storage.",
             instructions=REPORT_WRITER_PROMPT,
             service=get_azure_openai_service(config.get_model_config("o3")),
-            plugins=[sk_memory]
+            plugins=[memory_plugin]
         ),
 
         "translator": ChatCompletionAgent(
@@ -114,14 +101,13 @@ async def create_agents_with_sk_memory(
 
         "reflection_critic": ChatCompletionAgent(
             name="ReflectionCriticAgent",
-            description="Evaluates report quality for coverage, coherence, citations and provides improvement feedback. Uses SK memory for evaluation context.",
+            description="Evaluates report quality for coverage, coherence, citations and provides improvement feedback. Uses memory for evaluation context.",
             instructions=REFLECTION_CRITIC_PROMPT,
-            service=get_azure_openai_service(config.get_model_config("o3")),
-            plugins=[sk_memory]
+            service=get_azure_openai_service(config.get_model_config("o3"))
         )
     }
 
-    logger.info(f"Created {len(agents)} agents with SK memory support")
+    logger.info(f"Created {len(agents)} agents with memory support")
     logger.info(f"Agents: {list(agents.keys())}")
     for agent_name, agent in agents.items():
         logger.info(f"Agent {agent_name}: {agent.name} - {agent.description}")

@@ -40,69 +40,25 @@ class ResearchExecutor:
         except Exception as e:
             self.logger.warning(f"Failed to load project configuration: {e}")
             self.project_config = None
-
-    def _find_sk_memory_plugin(
-            self,
-            research_agents: List[Any],
-            lead_agent: Any = None) -> Optional[Any]:
-        """
-        Find SK memory plugin from existing agents.
-
-        Args:
-            research_agents: List of research agents to search
-            lead_agent: Lead agent to search (optional)
-
-        Returns:
-            SK memory plugin if found, None otherwise
-        """
-        # Search in existing research agents
-        for agent in research_agents:
-            if hasattr(
-                    agent,
-                    'kernel') and agent.kernel and hasattr(
-                    agent.kernel,
-                    'plugins'):
-                for plugin in agent.kernel.plugins.values():
-                    if hasattr(
-                            plugin, 'session_id') and hasattr(
-                            plugin, 'store_memory'):
-                        self.logger.info(
-                            f"🔗 [ThreadPool] Found SK memory plugin from existing agent: {
-                                type(plugin).__name__}")
-                        return plugin
-
-        # Search in lead agent if provided
-        if lead_agent and hasattr(
-                lead_agent,
-                'kernel') and lead_agent.kernel and hasattr(
-                lead_agent.kernel,
-                'plugins'):
-            for plugin in lead_agent.kernel.plugins.values():
-                if hasattr(
-                        plugin,
-                        'session_id') and hasattr(
-                        plugin,
-                        'store_memory'):
-                    self.logger.info(
-                        f"🔗 [ThreadPool] Found SK memory plugin from LeadResearcherAgent: {
-                            type(plugin).__name__}")
-                    return plugin
-
-        return None
+        
+        # Function calling analysis settings
+        self.function_calling_analysis_enabled = True
+        self.detailed_function_logging = True
+        self.content_richness_scoring = True
 
     def _create_research_agent(
             self,
             config_dict: dict,
-            sk_memory_plugin: Any = None) -> ChatCompletionAgent:
+            memory_plugin: Any = None) -> ChatCompletionAgent:
         """
         Create a single research agent with specified configuration.
 
         Args:
             config_dict: Configuration dictionary with temp, approach, agent_suffix
-            sk_memory_plugin: SK memory plugin to attach (optional)
+            memory_plugin: Memory plugin to attach (required for memory functionality)
 
         Returns:
-            Configured ChatCompletionAgent
+            Configured ChatCompletionAgent with memory capabilities
         """
         temp = config_dict["temp"]
         approach = config_dict["approach"]
@@ -116,14 +72,17 @@ class ResearchExecutor:
         if temp is not None:
             instructions = TemperatureManager.get_temperature_instructions(
                 temp, approach)
-            self.logger.info(f"🌡️ [TEMP {temp}] Created {agent_suffix} with temperature-specific instructions")
+            self.logger.debug(f"🌡️ [TEMP {temp}] Created {agent_suffix} with temperature-specific instructions")
         else:
             instructions = RESEARCHER_PROMPT
 
-        # Setup plugins
+        # Setup plugins - always include memory plugin for knowledge preservation
         plugins = [ModularSearchPlugin()]
-        if sk_memory_plugin:
-            plugins.append(sk_memory_plugin)
+        if memory_plugin:
+            plugins.append(memory_plugin)
+            self.logger.debug(f"💾 [MEMORY] Added memory plugin to {agent_suffix} for knowledge preservation")
+        else:
+            self.logger.debug(f"⚠️ [MEMORY] No memory plugin available for {agent_suffix} - important findings may not be preserved")
 
         agent_name = TemperatureManager.get_agent_name(agent_suffix)
         description = TemperatureManager.get_agent_description(approach, temp)
@@ -148,7 +107,7 @@ class ResearchExecutor:
             self,
             research_agents: List[Any],
             use_temperature_variation: bool,
-            sk_memory_plugin: Any = None,
+            memory_plugin: Any = None,
             target_count: int = 3) -> List[Any]:
         """
         Prepare agents for concurrent execution.
@@ -174,7 +133,7 @@ class ResearchExecutor:
 
                 for i in range(target_count):
                     agent = self._create_research_agent(
-                        temperature_configs[i], sk_memory_plugin)
+                        temperature_configs[i], memory_plugin)
                     research_agents.append(agent)
 
             return research_agents[:target_count]
