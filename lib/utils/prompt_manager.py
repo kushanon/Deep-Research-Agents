@@ -19,14 +19,35 @@ class PromptManager:
 
     def get_company_context(self) -> Dict[str, str]:
         """Get company context for prompts."""
-        return {
-            'company_name': self.config.company.name,
-            'company_display_name': self.config.company.display_name,
-            'company_language': self.config.company.language,
-            'document_scope_jp': f"{
-                self.config.company.display_name} internal documents",
-            'document_scope_en': f"{
-                self.config.company.name} internal documents"}
+        try:
+            # Safe access to company configuration
+            company = self.config.company
+            if hasattr(company, 'name'):
+                company_name = company.name
+                company_display_name = company.display_name
+                company_language = company.language
+            else:
+                # Fallback if company is a dict instead of object
+                company_name = company.get('name', 'Organization') if isinstance(company, dict) else 'Organization'
+                company_display_name = company.get('display_name', 'Organization') if isinstance(company, dict) else 'Organization'
+                company_language = company.get('language', 'en') if isinstance(company, dict) else 'en'
+            
+            return {
+                'company_name': company_name,
+                'company_display_name': company_display_name,
+                'company_language': company_language,
+                'document_scope_jp': f"{company_display_name} internal documents",
+                'document_scope_en': f"{company_name} internal documents"
+            }
+        except Exception as e:
+            # Fallback with default values
+            return {
+                'company_name': 'Organization',
+                'company_display_name': 'Organization',
+                'company_language': 'en',
+                'document_scope_jp': 'Organization internal documents',
+                'document_scope_en': 'Organization internal documents'
+            }
 
     def get_document_types_section(self) -> str:
         """Generate document types section for prompts."""
@@ -91,15 +112,16 @@ class PromptManager:
 
     def get_internal_only_requirement(self) -> str:
         """Get internal sources only requirement text."""
-        company_name = self.config.company.name
+        company_context = self.get_company_context()
         return f"**INTERNAL SOURCES ONLY**: All research must be based exclusively on internal {
-            company_name} documents. NO external information or assumptions permitted."
+            company_context['company_name']} documents. NO external information or assumptions permitted."
 
     def get_citation_requirements(self) -> str:
         """Get citation requirements section."""
+        company_context = self.get_company_context()
         return f"""## Citation Requirements
 - **Case Number Format**: Use standardized formats ({self.get_record_id_field()} numbers, {self.get_case_number_format()}, etc.)
-- **MANDATORY**: Verify all citations reference internal {self.config.company['name']} documentation only
+- **MANDATORY**: Verify all citations reference internal {company_context['company_name']} documentation only
 - **Metadata Preservation**: Include document titles, case numbers, {self.get_record_id_field()}
                                                                                                 numbers, and other identifying information"""
 
@@ -150,14 +172,15 @@ class PromptManager:
 
     def get_quality_requirements(self) -> List[str]:
         """Get quality requirements list."""
+        company_context = self.get_company_context()
         return [
             f"Internal document source verification for {
-                self.config.company.name}",
+                company_context['company_name']}",
             "Complete metadata and traceability information",
             "Technical accuracy and consistency standards",
             "Regulatory compliance indicators",
             f"Adherence to {
-                self.config.company.name} documentation standards"]
+                company_context['company_name']} documentation standards"]
 
     def get_search_examples_section(self) -> str:
         """Generate search examples section."""

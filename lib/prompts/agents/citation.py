@@ -29,11 +29,26 @@ def generate_citation_agent_prompt(config=None) -> str:
 
         prompt_manager = PromptManager(config)
 
-        # Get dynamic content from configuration
-        company_context = prompt_manager.get_company_context()
-        citation_requirements = prompt_manager.get_citation_requirements()
-        case_number_format = prompt_manager.get_case_number_format()
-        record_id_field = prompt_manager.get_record_id_field()
+        # Get dynamic content from configuration with error handling
+        try:
+            company_context = prompt_manager.get_company_context()
+            citation_requirements = prompt_manager.get_citation_requirements()
+            case_number_format = prompt_manager.get_case_number_format()
+            record_id_field = prompt_manager.get_record_id_field()
+        except Exception as inner_e:
+            # Log the specific error for debugging
+            logger.warning(f"Failed to get configuration details: {inner_e}")
+            # Use fallback values
+            company_context = {
+                'company_name': 'Organization',
+                'company_display_name': 'Organization',
+                'company_language': 'en',
+                'document_scope_jp': 'Organization internal documents',
+                'document_scope_en': 'Organization internal documents'
+            }
+            citation_requirements = "Standard academic citation format"
+            case_number_format = "CASE-YYYY-NNNN"
+            record_id_field = "record_id"
 
         prompt = f"""
 # CITATION AGENT - INTERNAL SOURCE ATTRIBUTION SPECIALIST

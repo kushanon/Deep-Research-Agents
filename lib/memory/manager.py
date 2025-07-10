@@ -202,9 +202,10 @@ class MemoryManager:
                     filtered_count += 1
                     continue
 
-                content_list.append(result.text)
+                # Get text content from the metadata
+                content_list.append(result.Metadata.Text)
                 self.logger.debug(f"[MEMORY SEARCH] Added result {
-                                  i + 1}: {result.text[:50]}...")
+                                  i + 1}: {result.Metadata.Text[:50]}...")
 
             self.logger.info(f"[MEMORY SEARCH] Search completed")
             self.logger.info(
@@ -243,7 +244,9 @@ class MemoryManager:
             return False
 
         try:
-            metadata = json.loads(result.metadata.additional_metadata or "{}")
+            # Access metadata through the correct property name
+            additional_metadata = getattr(result.Metadata, 'AdditionalMetadata', None) or "{}"
+            metadata = json.loads(additional_metadata)
             result_type = metadata.get("type", "unknown")
             result_source = metadata.get("source", "unknown")
 
