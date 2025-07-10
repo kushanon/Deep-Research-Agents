@@ -73,16 +73,6 @@ async def create_agents_with_memory(
             service=get_azure_openai_service(config.get_model_config("gpt41")),
             plugins=[CitationAgentPlugin()]
         ),
-
-        "summarizer": ChatCompletionAgent(
-            name="SummarizerAgent",
-            description="Synthesizes large volumes of search results into comprehensive, organized summaries. Uses SK memory for context and result storage.",
-            instructions=SUMMARIZER_PROMPT,
-            service=get_azure_openai_service(
-                config.get_model_config("gpt41_mini")),
-            plugins=[sk_memory]
-        ),
-
         "report_writer": ChatCompletionAgent(
             name="ReportWriterAgent",
             description="Creates structured markdown reports with proper citations, hyperlinks, and visual content. Uses memory for context and component storage.",
