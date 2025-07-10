@@ -1,9 +1,9 @@
-# 🔬 Deep Research Agent
+# 🔬 Deep Research Agents
 
 AI agent system that automates internal document search and deep research for enterprises
 
 ## 🎯 Overview
-Deep Research Agent is a next-generation MultiAgent system built on **Semantic Kernel**. Through **MagenticOrchestration**, multiple specialized AI agents dynamically collaborate to automatically generate high-quality research reports from enterprise internal documents. From internal document search via Azure AI Search, Semantic Kernel Memory, to comprehensive reliability assessment, it intelligently automates the entire enterprise research process.
+Deep Research Agents is a next-generation MultiAgent system built on **Semantic Kernel**. Through **MagenticOrchestration**, multiple specialized AI agents dynamically collaborate to automatically generate high-quality research reports from enterprise internal documents. From internal document search via Azure AI Search, Semantic Kernel Memory, to comprehensive reliability assessment, it intelligently automates the entire enterprise research process.
 
 ### 🌟 Key Features
 
@@ -18,7 +18,7 @@ Deep Research Agent is a next-generation MultiAgent system built on **Semantic K
 
 ## 🏗️ Architecture
 
-Deep Research Agent is a next-generation MultiAgent system centered on **Microsoft Semantic Kernel** and **MagenticOrchestration**. It fully automates internal document search, analysis, and report generation specialized for enterprise R&D.
+Deep Research Agents is a next-generation MultiAgent system centered on **Microsoft Semantic Kernel** and **MagenticOrchestration**. It fully automates internal document search, analysis, and report generation specialized for enterprise R&D.
 
 ### 🎭 System Overview Diagram
 
@@ -150,7 +150,7 @@ The search system flexibly adapts to enterprise-specific document structures and
 
 ### Prerequisites
 
-Before installing the Deep Research Agent, ensure you have the following:
+Before using the Deep Research Agents, ensure you have the following:
 
 - **Python 3.12+** (Recommended: 3.12.10 or later)
 - **Azure OpenAI** account with access to:
@@ -166,7 +166,7 @@ Before installing the Deep Research Agent, ensure you have the following:
 
 ### 📦 Installation
 
-Follow these step-by-step instructions to set up the Deep Research Agent:
+Follow these step-by-step instructions to set up the Deep Research Agents:
 
 #### Step 1: Clone the Repository
 ```powershell
@@ -227,7 +227,7 @@ python main.py --query "Could you summarize the latest update on Azure OpenAI in
 The system uses template files that you need to copy and customize:
 
 ```
-Deep-Research-Agent/
+Deep-Research-Agents/
 ├── config/
 │   ├── project_config_templates.yaml # Template for project configuration
 │   └── project_config.yaml           # Your customized configuration (create this)
