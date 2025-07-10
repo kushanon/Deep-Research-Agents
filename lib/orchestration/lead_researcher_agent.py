@@ -69,9 +69,6 @@ class LeadResearcherAgent(ChatCompletionAgent):
         logger = logging.getLogger(__name__)
         logger.info(f"🔬 Initializing LeadResearcherAgent with {
                     agent_count} internal research agents")
-        logger.info(f"🔬 Method Resolution Order (MRO): {
-                    [cls.__name__ for cls in type(self).__mro__]}")
-
         # Extract plugins from kwargs if passed there
         if plugins is None:
             plugins = kwargs.pop('plugins', [])

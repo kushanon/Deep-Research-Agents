@@ -223,7 +223,6 @@ class Config:
             logging.getLogger("in_process_runtime").setLevel(logging.WARNING)
             logging.getLogger("httpx").setLevel(logging.WARNING)
             logging.getLogger("semantic_kernel").setLevel(logging.WARNING)
-            print(f"[CONFIG] Standard logging level: {self.log_level}")
 
     def get_azure_config(self) -> dict:
         """Get Azure configuration as a dictionary."""
