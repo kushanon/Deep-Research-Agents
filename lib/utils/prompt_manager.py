@@ -144,7 +144,7 @@ class PromptManager:
 
         role_descriptions = {
             'lead_researcher': f"Expert internal document researcher for {
-                company_context['company_name']} utilizing advanced hybrid search and SK Memory for comprehensive R&D data retrieval from internal repositories.",
+                company_context['company_name']} utilizing advanced hybrid search and Memory for comprehensive data retrieval from internal repositories.",
             'report_writer': f"Professional research writer creating comprehensive, well-structured R&D reports with confidence assessments, proper citations, and regulatory compliance for internal {
                 company_context['company_name']} documentation.",
             'citation': f"Citation Agent responsible for processing research documents and ensuring proper attribution of all claims to internal {

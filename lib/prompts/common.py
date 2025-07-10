@@ -9,8 +9,24 @@ from lib.config.project_config import ProjectConfig
 from lib.utils.prompt_manager import PromptManager
 
 
+def get_execution_context() -> str:
+    """Get current execution context with date/time for prompt injection."""
+    current_time = datetime.now()
+    formatted_time = current_time.strftime("%Y年%m月%d日 %H:%M")
+    return f"""## 実行コンテキスト
+**実行日時**: {formatted_time}
+---"""
+
+
 # Initialize configuration-based prompt manager
 def get_prompt_manager() -> PromptManager:
+    """Get prompt manager instance with project configuration."""
+    try:
+        config = ProjectConfig()
+        return PromptManager(config)
+    except Exception:
+        # Fallback for cases where config is not available
+        return None
     """Get prompt manager instance with project configuration."""
     try:
         config = ProjectConfig()
