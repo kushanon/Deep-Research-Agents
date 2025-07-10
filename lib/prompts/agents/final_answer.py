@@ -4,7 +4,11 @@ Final Answer Agent Prompts
 This module contains prompts for final answer generation and structuring.
 """
 
-FINAL_ANSWER_PROMPT = """
+from lib.prompts.common import get_execution_context
+
+def get_final_answer_prompt() -> str:
+    """Generate dynamic final answer prompt with execution context."""
+    return f"""{get_execution_context()}
 ## CRITICAL LANGUAGE REQUIREMENT - MANDATORY
 **OUTPUT LANGUAGE**: You MUST respond in the same language as the user's input query. If the user asked in Japanese, provide the entire report in Japanese. If the user asked in English, provide the entire report in English. This language consistency is non-negotiable.
 

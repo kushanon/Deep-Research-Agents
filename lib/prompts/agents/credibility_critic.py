@@ -8,6 +8,7 @@ import logging
 
 from lib.config.project_config import get_project_config
 from lib.utils.prompt_manager import PromptManager
+from lib.prompts.common import get_execution_context
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,8 @@ def get_credibility_critic_prompt() -> str:
     regulatory_compliance = evaluation_criteria.get(
         'regulatory_compliance', 'Compliance documentation verification')
 
-    return f"""
+    return f"""{get_execution_context()}
+
 # CREDIBILITY CRITIC - SOURCE VALIDATION & VERIFICATION
 
 ## ROLE & PURPOSE

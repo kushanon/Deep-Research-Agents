@@ -8,6 +8,7 @@ import logging
 
 from lib.config.project_config import get_project_config
 from lib.utils.prompt_manager import PromptManager
+from lib.prompts.common import get_execution_context
 
 from ..common import (COMMON_INTERNAL_ONLY_REQUIREMENT,
                       COMMON_MEMORY_INTEGRATION, COMMON_SEARCH_FUNCTIONS,
@@ -30,7 +31,7 @@ def get_manager_prompt() -> str:
     # Get case number format
     case_format = config.get_case_number_format()
 
-    return f"""
+    return f"""{get_execution_context()}
 # RESEARCH MANAGER - MULTI-AGENT ORCHESTRATION SYSTEM
 
 ## ROLE & PURPOSE

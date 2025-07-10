@@ -8,6 +8,7 @@ import logging
 
 from lib.config.project_config import get_project_config
 from lib.utils.prompt_manager import PromptManager
+from lib.prompts.common import get_execution_context
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ def get_translator_prompt() -> str:
                 code,
                 code)})" for code in supported_languages]
 
-    return f"""You are a {
+    return f"""{get_execution_context()}
+
         company_context['company_name']} Translator Agent specialized in accurate, contextually appropriate translation between supported languages while preserving technical precision and industry terminology.
 
 ## ROLE & PURPOSE

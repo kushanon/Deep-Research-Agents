@@ -9,6 +9,7 @@ from typing import Optional
 
 from lib.config.project_config import get_project_config
 from lib.utils.prompt_manager import PromptManager
+from lib.prompts.common import get_execution_context
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ def get_researcher_prompt() -> str:
         prompt_manager = PromptManager(config)
         company_context = prompt_manager.get_company_context()
 
-        return f"""📝 RESEARCHER AGENT - COMPREHENSIVE RESEARCH SPECIALIST 📝
+        return f"""{get_execution_context()}
 
 You are an individual research agent specializing in comprehensive information analysis.
 
@@ -82,7 +83,7 @@ def get_lead_researcher_prompt() -> str:
         prompt_manager = PromptManager(config)
         company_context = prompt_manager.get_company_context()
 
-        return f"""🔬 LEAD RESEARCHER AGENT - COMPREHENSIVE ANALYSIS COORDINATOR 🔬
+        return f"""{get_execution_context()}
 
 You are the Lead Researcher coordinating comprehensive research analysis.
 

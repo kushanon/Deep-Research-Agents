@@ -8,6 +8,7 @@ import logging
 
 from lib.config.project_config import get_project_config
 from lib.utils.prompt_manager import PromptManager
+from lib.prompts.common import get_execution_context
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ def get_report_writer_prompt() -> str:
     reference_title = citation_processing.get('reference_section_title', {})
     reference_title_ja = reference_title.get('ja', '参考文献・引用元（内部文書のみ）')
 
-    return f"""You are a {company_context['company_name']} Report Writer Agent specialized in creating comprehensive, well-structured research reports with proper citations and regulatory compliance focus.
+    return f"""{get_execution_context()}
 
 ## CORE RESPONSIBILITIES
 

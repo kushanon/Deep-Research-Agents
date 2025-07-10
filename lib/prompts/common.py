@@ -4,6 +4,7 @@ Provides reusable components for all agent prompts.
 Now uses configuration-based values instead of hardcoded constants.
 """
 
+from datetime import datetime
 from lib.config.project_config import ProjectConfig
 from lib.utils.prompt_manager import PromptManager
 
@@ -17,6 +18,19 @@ def get_prompt_manager() -> PromptManager:
     except Exception:
         # Fallback for cases where config is not available
         return None
+
+
+# ============================================================================
+# EXECUTION CONTEXT INFORMATION
+# ============================================================================
+
+def get_execution_context() -> str:
+    """Get current execution context including date and time."""
+    now = datetime.now()
+    return f"""## EXECUTION CONTEXT
+📅 **Current Date**: {now.strftime('%Y-%m-%d (%A)')}
+🕐 **Current Time**: {now.strftime('%H:%M:%S')}
+"""
 
 
 # ============================================================================
@@ -99,7 +113,10 @@ COMMON_MEMORY_INTEGRATION = """## MEMORY INTEGRATION REQUIREMENTS
 def get_critical_requirements_template() -> str:
     """Get critical requirements template from configuration."""
     internal_only = get_common_internal_only_requirement()
-    return f"""## CRITICAL REQUIREMENTS - NON-NEGOTIABLE
+    execution_context = get_execution_context()
+    return f"""{execution_context}
+
+## CRITICAL REQUIREMENTS - NON-NEGOTIABLE
 {internal_only}
 **EXHAUSTIVE SEARCH**: Conduct comprehensive searches across all available document types without arbitrary limits.
 **MAXIMUM RESULTS**: Always use top_k=50 for maximum information retrieval.
@@ -120,6 +137,7 @@ COMMON_INTERNAL_ONLY_REQUIREMENT = get_common_internal_only_requirement()
 COMMON_SEARCH_FUNCTIONS = get_common_search_functions()
 CRITICAL_REQUIREMENTS_TEMPLATE = get_critical_requirements_template()
 COMMON_OUTPUT_FORMAT = get_common_output_format()
+EXECUTION_CONTEXT = get_execution_context()  # Add execution context as constant
 
 # ============================================================================
 # IMAGE MANAGEMENT CONSTANTS

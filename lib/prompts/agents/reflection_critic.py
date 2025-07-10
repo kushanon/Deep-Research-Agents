@@ -8,6 +8,7 @@ import logging
 
 from lib.config.project_config import get_project_config
 from lib.utils.prompt_manager import PromptManager
+from lib.prompts.common import get_execution_context
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def get_reflection_critic_prompt() -> str:
     quality_thresholds = config.get_researcher_quality_thresholds()
     quality_threshold = quality_thresholds.get('quality_threshold', 0.80)
 
-    return f"""
+    return f"""{get_execution_context()}
 # REFLECTION CRITIC - RESEARCH QUALITY EVALUATOR
 
 ## ROLE & PURPOSE

@@ -6,7 +6,7 @@ Generates dynamic prompts using project_config.yaml instead of hardcoded values.
 import logging
 
 from lib.config.project_config import ProjectConfig
-from lib.prompts.common import COMMON_MEMORY_INTEGRATION
+from lib.prompts.common import COMMON_MEMORY_INTEGRATION, get_execution_context
 from lib.utils.prompt_manager import PromptManager
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ def generate_citation_agent_prompt(config=None) -> str:
             case_number_format = "CASE-YYYY-NNNN"
             record_id_field = "record_id"
 
-        prompt = f"""
+        prompt = f"""{get_execution_context()}
 # CITATION AGENT - INTERNAL SOURCE ATTRIBUTION SPECIALIST
 
 ## ROLE & PURPOSE
@@ -134,7 +134,8 @@ Remember: Proper source attribution is not just good practice - it's a regulator
 
 
 # Original static prompt as fallback
-CITATION_AGENT_PROMPT_FALLBACK = """
+CITATION_AGENT_PROMPT_FALLBACK = f"""{get_execution_context()}
+
 # CITATION AGENT - INTERNAL SOURCE ATTRIBUTION SPECIALIST
 
 ## ROLE & PURPOSE

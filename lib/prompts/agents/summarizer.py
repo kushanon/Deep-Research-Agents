@@ -8,6 +8,7 @@ import logging
 
 from lib.config.project_config import get_project_config
 from lib.utils.prompt_manager import PromptManager
+from lib.prompts.common import get_execution_context
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ def get_summarizer_prompt() -> str:
         'sections', [
             'Key Points', 'Critical Findings', 'Implications', 'Recommendations'])
 
-    return f"""You are a {
+    return f"""{get_execution_context()}
         company_context['company_name']} Summarizer Agent specialized in synthesizing extensive research data into comprehensive, organized summaries for research analysis.
 
 ## ROLE & PURPOSE
