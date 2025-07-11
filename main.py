@@ -100,7 +100,8 @@ def configure_logging(debug_mode: bool = False) -> None:
         logging.getLogger("semantic_kernel").setLevel(logging.DEBUG)
         logging.getLogger("lib.agent_factory").setLevel(logging.DEBUG)
         logging.getLogger("lib.azure_search_plugin").setLevel(logging.DEBUG)
-        logging.getLogger("lib.memory_plugin").setLevel(logging.DEBUG)
+        logging.getLogger("lib.memory.plugin").setLevel(logging.DEBUG)
+        logging.getLogger("lib.search.plugin").setLevel(logging.DEBUG)
         logging.getLogger("lib.orchestration.research_executor").setLevel(logging.DEBUG)
         logging.getLogger("lib.memory").setLevel(logging.DEBUG)
         # Update console handler level for debug mode

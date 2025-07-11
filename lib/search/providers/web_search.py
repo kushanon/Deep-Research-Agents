@@ -320,35 +320,6 @@ class WebSearchProvider(SearchProvider):
         logger.info(f"Successfully processed {len(results)} search results")
         return results
 
-    def _extract_domain(self, url: str) -> str:
-        """Extract domain from URL."""
-        try:
-            parsed = urlparse(url)
-            return parsed.netloc
-        except Exception:
-            return ""
-
-    def _validate_search_results(self, results: List[SearchResult]) -> bool:
-        """Validate search results structure."""
-        if not isinstance(results, list):
-            return False
-
-        for result in results:
-            if not isinstance(result, SearchResult):
-                return False
-            if not result.content_text or not result.document_title:
-                return False
-
-        return True
-
-    def _truncate_text(self, text: str, max_length: int = 1000) -> str:
-        """Truncate text to specified length with ellipsis."""
-        if text is None:
-            return ""
-        if len(text) <= max_length:
-            return text
-        return text[:max_length - 3] + "..."
-
     def get_statistics(self) -> Dict[str, SearchStatistics]:
         """Get web search statistics."""
         return {
@@ -384,37 +355,145 @@ class WebSearchProvider(SearchProvider):
             if not hasattr(self, 'client') or self.client is None:
                 return False
 
-            # Optional: Quick health check with a simple query
-            # This is commented out to avoid unnecessary API calls
-            # try:
-            #     response = self.client.search(query="test", max_results=1, timeout=5)
-            #     return True
-            # except:
-            #     return False
-
             return True
         except Exception:
-            return False
-
-    def check_api_health(self) -> bool:
-        """Perform a quick health check of the Tavily API."""
-        try:
-            if not self.is_available():
-                return False
-
-            # Quick test query
-            response = self.client.search(
-                query="test",
-                max_results=1,
-                timeout=5
-            )
-
-            return isinstance(response, dict) and 'results' in response
-
-        except Exception as e:
-            logger.debug(f"API health check failed: {e}")
             return False
 
     def get_supported_document_types(self) -> List[DocumentType]:
         """Get supported document types."""
         return [DocumentType.WEB_SEARCH]
+
+    async def search_web(self, search_params: Dict[str, Any]) -> Dict[str, Any]:
+        """Perform web search using Tavily API with enhanced parameters."""
+        try:
+            query = search_params.get("query", "")
+            if not query:
+                return {"error": "Query is required", "results": []}
+
+            # Extract parameters with defaults
+            max_results = search_params.get("max_results", 10)
+            topic = search_params.get("topic", "general")
+            search_depth = search_params.get("search_depth", "advanced")
+            include_answer = search_params.get("include_answer", False)
+            include_raw_content = search_params.get("include_raw_content", False)
+            include_images = search_params.get("include_images", False)
+            include_image_descriptions = search_params.get("include_image_descriptions", False)
+            time_range = search_params.get("time_range")
+
+            # Build Tavily search parameters
+            tavily_params = {
+                "query": query,
+                "max_results": min(max_results, 50),  # Limit to 50 max
+                "topic": topic,
+                "search_depth": search_depth,
+                "include_answer": include_answer,
+                "include_raw_content": include_raw_content,
+                "include_images": include_images or include_image_descriptions
+            }
+
+            # Add time range if specified
+            if time_range:
+                tavily_params["days"] = self._convert_time_range_to_days(time_range)
+
+            logger.info(f"Executing Tavily search with params: {tavily_params}")
+
+            # Execute search
+            response = await self._execute_tavily_search(tavily_params)
+
+            # Process and format response
+            return self._format_web_search_response(response, include_image_descriptions)
+
+        except Exception as e:
+            logger.error(f"Web search failed: {str(e)}")
+            return {"error": f"Web search failed: {str(e)}", "results": []}
+
+    def _convert_time_range_to_days(self, time_range: str) -> int:
+        """Convert time range string to days for Tavily API."""
+        time_mapping = {
+            "day": 1,
+            "week": 7,
+            "month": 30,
+            "year": 365
+        }
+        return time_mapping.get(time_range, 7)  # Default to week
+
+    async def _execute_tavily_search(self, tavily_params: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute Tavily search with error handling."""
+        try:
+            # Execute search (Tavily client may not be async, wrap if needed)
+            response = self.client.search(**tavily_params)
+            return response
+        except Exception as e:
+            logger.error(f"Tavily API call failed: {str(e)}")
+            raise
+
+    def _format_web_search_response(self, response: Dict[str, Any], include_image_descriptions: bool = False) -> Dict[str, Any]:
+        """Format Tavily response for consistent output."""
+        try:
+            results = response.get("results", [])
+            formatted_results = []
+
+            for result in results:
+                formatted_result = {
+                    "url": result.get("url", ""),
+                    "title": result.get("title", ""),
+                    "content": result.get("content", ""),
+                    "score": result.get("score", 0.0),
+                    "published_date": result.get("published_date", ""),
+                    "domain": self._extract_domain(result.get("url", ""))
+                }
+
+                # Add raw content if available
+                if "raw_content" in result:
+                    formatted_result["raw_content"] = result["raw_content"]
+
+                formatted_results.append(formatted_result)
+
+            formatted_response = {
+                "results": formatted_results,
+                "query": response.get("query", ""),
+                "follow_up_questions": response.get("follow_up_questions", [])
+            }
+
+            # Add answer if available
+            if "answer" in response:
+                formatted_response["answer"] = response["answer"]
+
+            # Add images if requested and available
+            if include_image_descriptions and "images" in response:
+                formatted_response["images"] = response["images"]
+
+            return formatted_response
+
+        except Exception as e:
+            logger.error(f"Failed to format web search response: {str(e)}")
+            return {"error": f"Failed to format response: {str(e)}", "results": []}
+
+    def _extract_domain(self, url: str) -> str:
+        """Extract domain from URL."""
+        try:
+            parsed = urlparse(url)
+            return parsed.netloc
+        except Exception:
+            return ""
+
+    def _validate_search_results(self, results: List[SearchResult]) -> bool:
+        """Validate search results structure."""
+        if not isinstance(results, list):
+            return False
+
+        for result in results:
+            if not isinstance(result, SearchResult):
+                return False
+            if not result.content_text or not result.document_title:
+                return False
+
+        return True
+
+    def _truncate_text(self, text: str, max_length: int = 1000) -> str:
+        """Truncate text to specified length with ellipsis."""
+        if text is None:
+            return ""
+        if len(text) <= max_length:
+            return text
+        return text[:max_length - 3] + "..."

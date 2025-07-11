@@ -3,6 +3,7 @@ Semantic Kernel plugin wrapper for the modular search system.
 Dynamically generates search functions based on project configuration.
 """
 import json
+from typing import Annotated, Literal
 import logging
 from typing import Any, Callable, Dict, Optional
 
@@ -30,18 +31,55 @@ class ModularSearchPlugin:
         self._generate_dynamic_functions()
 
         logger.info("Modular Search Plugin initialized with dynamic functions")
+    
+    def _toggle_internal_all_documents_function(self):
+        """Enable or disable function calling for search_internal_all_documents based on _internal_functions_enabled."""
+        if getattr(self, '_internal_functions_enabled', False):
+            # Only add kernel_function decorator if enabled
+            if not hasattr(self, '_search_internal_all_documents_decorated'):
+                # Create a wrapper function and decorate it
+                async def wrapped_search_internal_all_documents(
+                    query: str,
+                    top_k_per_source: int = None,
+                    use_hybrid_search: bool = None,
+                    use_semantic_search: bool = None
+                ) -> str:
+                    return await self.search_internal_all_documents(
+                        query, top_k_per_source, use_hybrid_search, use_semantic_search
+                    )
+                
+                decorated = kernel_function(
+                    name="search_internal_all_documents",
+                    description="Search across all internal document types using hybrid vector and semantic search"
+                )(wrapped_search_internal_all_documents)
+                
+                # Replace the method with the decorated version
+                setattr(self, 'search_internal_all_documents', decorated)
+                self._search_internal_all_documents_decorated = True
+        else:
+            # Function calling is disabled - method remains undecorated but still callable
+            if hasattr(self, '_search_internal_all_documents_decorated'):
+                # Restore original method implementation
+                original_method = self.__class__.search_internal_all_documents
+                # Bind the unbound method to this instance
+                setattr(self, 'search_internal_all_documents', original_method.__get__(self, self.__class__))
+                del self._search_internal_all_documents_decorated
 
     def _generate_dynamic_functions(self):
         """Generate search functions dynamically based on project configuration."""
         try:
+            internal_function_count = 0
             if hasattr(
                     self.config,
                     'project_config') and self.config.project_config:
                 # Use project config to generate functions
                 for doc_type in self.config.project_config.document_types:
                     self._create_search_function(doc_type)
-                logger.info(f"Generated {
-                            len(self.config.project_config.document_types)} dynamic search functions")
+                    internal_function_count += 1
+                logger.info(f"Generated {internal_function_count} dynamic search functions")
+                # Only enable search_internal_all_documents if at least one internal function exists
+                self._internal_functions_enabled = internal_function_count > 0
+                self._toggle_internal_all_documents_function()
             else:
                 logger.error(
                     "Project configuration is required for ModularSearchPlugin")
@@ -141,15 +179,11 @@ class ModularSearchPlugin:
 
         # Add function to the class
         setattr(self, func_name, decorated_function)
-        logger.debug(f"Created dynamic function: {
-                     func_name} with config defaults: {config_defaults}")
+        logger.debug(f"Created dynamic function: {func_name} with config defaults: {config_defaults}")
 
         # Log query examples for debugging
-        if search_example_config and search_example_config.get(
-                'query_examples'):
-            logger.debug(
-                f"Function {func_name} configured with query examples: {
-                    search_example_config['query_examples']}")
+        if search_example_config and search_example_config.get('query_examples'):
+            logger.debug(f"Function {func_name} configured with query examples: {search_example_config['query_examples']}")
 
     async def _execute_search(
         self,
@@ -191,16 +225,18 @@ class ModularSearchPlugin:
             logger.error(f"Unknown document type: {doc_type_name}")
             raise e
 
-    @kernel_function(name="search_all_documents",
-                     description="Search across all internal document types using hybrid vector and semantic search")
-    async def search_all_documents(
+    async def search_internal_all_documents(
         self,
         query: str,
         top_k_per_source: int = None,
         use_hybrid_search: bool = None,
         use_semantic_search: bool = None
     ) -> str:
-        """Search across all document types for comprehensive results."""
+        """Search across all internal document types for comprehensive results."""
+        if not getattr(self, '_internal_functions_enabled', False):
+            error_msg = "search_internal_all_documents is not enabled because no internal search functions exist."
+            logger.error(error_msg)
+            return json.dumps([{"error": error_msg}], ensure_ascii=False)
         try:
             # Get search example configuration for all_documents if available
             search_example_config = None
@@ -253,7 +289,7 @@ class ModularSearchPlugin:
                 use_semantic_search=use_semantic_search
             )
 
-            results = await self.search_manager.search_all(
+            results = await self.search_manager.search_internal_all(
                 search_query,
                 top_k_per_source
             )
@@ -265,101 +301,6 @@ class ModularSearchPlugin:
             error_msg = f"Comprehensive search failed: {str(e)}"
             logger.error(error_msg)
             return json.dumps([{"error": error_msg}], ensure_ascii=False)
-
-    @kernel_function(name="get_search_statistics",
-                     description="Get statistics about available search indexes and providers")
-    def get_search_statistics(self) -> str:
-        """Get statistics about search providers and indexes."""
-        try:
-            stats = self.search_manager.get_all_statistics()
-            return json.dumps(stats, ensure_ascii=False, indent=2, default=str)
-        except Exception as e:
-            error_msg = f"Failed to get search statistics: {str(e)}"
-            logger.error(error_msg)
-            return json.dumps({"error": error_msg}, ensure_ascii=False)
-
-    @kernel_function(name="list_available_searches",
-                     description="List all available search functions and their descriptions")
-    def list_available_searches(self) -> str:
-        """List all dynamically created search functions."""
-        try:
-            available_functions = []
-
-            # Get all methods that start with 'search_' and have
-            # kernel_function decorator
-            for attr_name in dir(self):
-                if attr_name.startswith(
-                        'search_') and attr_name != 'search_all_documents':
-                    attr = getattr(self, attr_name)
-                    if hasattr(attr, '__kernel_function__'):
-                        func_info = {
-                            "function_name": attr_name,
-                            "description": getattr(
-                                attr,
-                                '__kernel_function_description__',
-                                'No description available')}
-                        available_functions.append(func_info)
-
-            return json.dumps({
-                "available_search_functions": available_functions,
-                "total_count": len(available_functions)
-            }, ensure_ascii=False, indent=2)
-
-        except Exception as e:
-            error_msg = f"Failed to list available searches: {str(e)}"
-            logger.error(error_msg)
-            return json.dumps({"error": error_msg}, ensure_ascii=False)
-
-    @kernel_function(name="get_search_suggestions",
-                     description="Get search query suggestions for a specific document type based on configuration examples")
-    async def get_search_suggestions(
-        self,
-        document_type: str = None
-    ) -> str:
-        """Get search query suggestions based on configuration examples."""
-        try:
-            suggestions = {}
-
-            if document_type and document_type != "all":
-                # Get suggestions for specific document type
-                search_example_config = None
-                if hasattr(
-                        self.config,
-                        'project_config') and self.config.project_config:
-                    search_example_config = self.config.project_config.get_search_example(
-                        document_type)
-
-                if search_example_config and search_example_config.get(
-                        'query_examples'):
-                    suggestions[document_type] = {
-                        'description': search_example_config.get('description', ''),
-                        'examples': search_example_config['query_examples']
-                    }
-                else:
-                    suggestions[document_type] = {
-                        'description': f"No examples configured for {document_type}", 'examples': []}
-            else:
-                # Get suggestions for all document types
-                if hasattr(
-                        self.config,
-                        'project_config') and self.config.project_config:
-                    for doc_type in self.config.project_config.document_types:
-                        search_example_config = self.config.project_config.get_search_example(
-                            doc_type.name)
-                        if search_example_config and search_example_config.get(
-                                'query_examples'):
-                            suggestions[doc_type.name] = {
-                                'display_name': doc_type.display_name,
-                                'description': search_example_config.get('description', ''),
-                                'examples': search_example_config['query_examples']
-                            }
-
-            return json.dumps(suggestions, ensure_ascii=False, indent=2)
-
-        except Exception as e:
-            error_msg = f"Failed to get search suggestions: {str(e)}"
-            logger.error(error_msg)
-            return json.dumps({"error": error_msg}, ensure_ascii=False)
 
     def _result_to_dict(self, result) -> dict:
         """Convert SearchResult object to dictionary for JSON serialization."""
@@ -390,3 +331,93 @@ class ModularSearchPlugin:
             result_dict.update(result.metadata)
 
         return result_dict
+    
+    @kernel_function(
+        name="web_search",
+        description="Perform comprehensive web search using external API with advanced filtering and image support. Returns top results from the web only, not internal documents."
+    )
+    async def web_search(
+        self,
+        query: Annotated[str, "Search query string."],
+        top_k: Annotated[int, "Maximum number of results to return (default 20).", 20] = 20,
+        time_range: Annotated[Optional[Literal["day", "week", "month", "year"]], "Optional time filter. Choices: 'day', 'week', 'month', 'year'."] = None,
+        topic: Annotated[Literal["general", "news", "finance"], "Search topic. Choices: 'general', 'news', 'finance'."] = "general",
+        search_depth: Annotated[Literal["basic", "advanced"], "Search depth. Choices: 'basic', 'advanced'."] = "advanced",
+        include_image_descriptions: Annotated[bool, "Include query-related images and descriptions."] = False
+    ) -> Annotated[str, "JSON string containing search results."]:
+        """
+        Perform web search using external API with enhanced error handling.
+
+        Args:
+            query: Search query string
+            top_k: Maximum number of results to return (default 10)
+            time_range: Optional time filter ("day", "week", "month", "year")
+            topic: Search topic ("general", "news", "finance")
+            search_depth: Search depth ("basic", "advanced")
+            include_image_descriptions: Include query-related images and descriptions
+
+        Returns:
+            str: JSON string containing search results
+        """
+        logger.info(
+            f"Web search called - Query: '{query[:50]}{'...' if len(query) > 50 else ''}', "
+            f"max_results: {top_k}, time_range: {time_range}, topic: {topic}, "
+            f"search_depth: {search_depth}, include_images: {include_image_descriptions}"
+        )
+        try:
+            # Build search parameters
+            search_params = {
+                "query": query,
+                "max_results": min(top_k, 50),
+                "topic": topic,
+                "search_depth": search_depth,
+                "include_answer": False,
+                "include_raw_content": False
+            }
+            if include_image_descriptions:
+                search_params["include_image_descriptions"] = True
+                search_params["include_images"] = True
+            valid_time_ranges = ["day", "week", "month", "year"]
+            if time_range and time_range in valid_time_ranges:
+                search_params["time_range"] = time_range
+
+            logger.debug(f"Built search parameters: {search_params}")
+
+            # Execute web search (assumes search_manager.search_web exists)
+            response = await self.search_manager.search_web(search_params)
+
+            # Process and validate response
+            results = response.get('results', []) if isinstance(response, dict) else []
+            processed_results = []
+            for result in results:
+                if not isinstance(result, dict):
+                    continue
+                result_data = {
+                    "url": result.get('url', ''),
+                    "title": result.get('title', ''),
+                    "snippet": result.get('content', ''),
+                    "score": result.get('score', 0.0),
+                    "published_date": result.get('published_date', ''),
+                    "domain": result.get('domain', '')
+                }
+                if 'raw_content' in result and result['raw_content']:
+                    result_data['raw_content'] = result['raw_content']
+                processed_results.append(result_data)
+
+            # Optionally process images if requested
+            if include_image_descriptions and 'images' in response:
+                for img in response['images']:
+                    processed_results.append({
+                        "image_url": img.get('url', ''),
+                        "image_description": img.get('description', '')
+                    })
+
+            logger.info(f"Web search completed - Found {len(processed_results)} results (including images if requested)")
+            logger.debug(f"Response summary - Results: {len(results)}, Images: {len(response.get('images', []))}")
+
+            return json.dumps(processed_results, ensure_ascii=False, indent=2)
+
+        except Exception as e:
+            error_msg = f"Web search failed: {str(e)}"
+            logger.error(error_msg)
+            return json.dumps([{"error": error_msg}], ensure_ascii=False)

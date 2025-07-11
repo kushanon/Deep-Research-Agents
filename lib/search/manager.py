@@ -94,14 +94,14 @@ class SearchManager:
 
         return await provider.search(query, document_type)
 
-    async def search_all(
+    async def search_internal_all(
         self,
         query: SearchQuery,
         top_k_per_source: int = None,
         provider_name: Optional[str] = None
     ) -> List[SearchResult]:
         """
-        Search across all available document types.
+        Search across all available internal document types.
 
         Args:
             query: Search query parameters
@@ -122,15 +122,15 @@ class SearchManager:
                     top_k_per_source = 15  # fallback default
             except Exception:
                 top_k_per_source = 15  # fallback default
-        if provider_name and provider_name in self.providers:
-            provider = self.providers[provider_name]
+        # Only use internal providers for search_internal_all
+        internal_providers = {k: v for k, v in self.providers.items() if k != "web"}
+        if provider_name and provider_name in internal_providers:
+            provider = internal_providers[provider_name]
         else:
-            # Use the first available provider for comprehensive search
-            provider = next(iter(self.providers.values())
-                            ) if self.providers else None
+            provider = next(iter(internal_providers.values())) if internal_providers else None
 
         if not provider:
-            raise ValueError("No available providers for search")
+            raise ValueError("No available internal providers for search_internal_all")
 
         return await provider.search_all(query, top_k_per_source)
 
@@ -461,3 +461,25 @@ class SearchManager:
     def get_provider(self, name: str) -> Optional[SearchProvider]:
         """Get a specific search provider by name."""
         return self.providers.get(name)
+
+    async def search_web(self, search_params: Dict[str, Any]) -> Dict[str, Any]:
+        """Perform web search using the WebSearchProvider."""
+        try:
+            # Get web search provider
+            web_provider = self.providers.get("web")
+            if not web_provider:
+                logger.error("Web search provider is not available")
+                return {"error": "Web search provider is not available", "results": []}
+            
+            # Execute web search
+            logger.info(f"Performing web search with query: {search_params.get('query', '')[:50]}")
+            
+            # Create a basic SearchQuery from search_params for compatibility
+            # Web provider may use search_params directly or convert as needed
+            response = await web_provider.search_web(search_params)
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Web search failed: {str(e)}")
+            return {"error": f"Web search failed: {str(e)}", "results": []}
