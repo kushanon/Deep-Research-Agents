@@ -95,11 +95,19 @@ def configure_logging(debug_mode: bool = False) -> None:
     """Configure logging levels based on debug mode."""
     if debug_mode or os.getenv("DEBUG", "").lower() in ("true", "1", "yes"):
         # Enable detailed debugging
+        logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger("kernel").setLevel(logging.DEBUG)
         logging.getLogger("semantic_kernel").setLevel(logging.DEBUG)
         logging.getLogger("lib.agent_factory").setLevel(logging.DEBUG)
         logging.getLogger("lib.azure_search_plugin").setLevel(logging.DEBUG)
-        logging.getLogger("lib.sk_memory_plugin").setLevel(logging.DEBUG)
+        logging.getLogger("lib.memory_plugin").setLevel(logging.DEBUG)
+        logging.getLogger("lib.orchestration.research_executor").setLevel(logging.DEBUG)
+        logging.getLogger("lib.memory").setLevel(logging.DEBUG)
+        # Update console handler level for debug mode
+        for handler in logging.getLogger().handlers:
+            if isinstance(handler, logging.StreamHandler):
+                handler.setLevel(logging.DEBUG)
+        
         logger.info("🐛 DEBUG mode enabled - detailed logging active")
     else:
         # Normal logging levels - reduce verbosity
