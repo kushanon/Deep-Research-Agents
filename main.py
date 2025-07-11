@@ -14,6 +14,38 @@ from semantic_kernel.agents import (MagenticOrchestration,
 from semantic_kernel.agents.runtime import InProcessRuntime
 from semantic_kernel.utils.logging import setup_logging
 
+
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter that adds colors to log messages based on log level."""
+    
+    # ANSI color codes
+    COLORS = {
+        'DEBUG': '\033[36m',      # Cyan
+        'INFO': '\033[32m',       # Green
+        'WARNING': '\033[33m',    # Yellow
+        'ERROR': '\033[31m',      # Red
+        'CRITICAL': '\033[35m',   # Magenta
+        'RESET': '\033[0m'        # Reset
+    }
+    
+    def format(self, record):
+        """Format log record with colors."""
+        # Get the color for this log level
+        color = self.COLORS.get(record.levelname, self.COLORS['RESET'])
+        reset = self.COLORS['RESET']
+        
+        # Apply color to the level name
+        original_levelname = record.levelname
+        record.levelname = f"{color}{record.levelname}{reset}"
+        
+        # Format the message
+        formatted_message = super().format(record)
+        
+        # Restore original level name
+        record.levelname = original_levelname
+        
+        return formatted_message
+
 from lib.agent_factory import create_agents_with_memory
 from lib.config import get_config
 from lib.memory import (MemoryPlugin, MemoryManager, SharedMemoryPluginSK,
@@ -22,13 +54,33 @@ from lib.prompts.agents.final_answer import FINAL_ANSWER_PROMPT
 from lib.prompts.agents.manager import MANAGER_PROMPT
 from lib.util import dbg, get_azure_openai_service
 
-# Configure logging with UTF-8 encoding to support emojis
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    encoding='utf-8',
-    force=True  # Override any existing configuration
-)
+# Configure logging with UTF-8 encoding to support emojis and colors
+def setup_colored_logging():
+    """Setup colored logging configuration."""
+    # Create colored formatter
+    colored_formatter = ColoredFormatter(
+        fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    
+    # Remove existing handlers to avoid duplicates
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
+    # Create console handler with colored formatter
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(colored_formatter)
+    console_handler.setLevel(logging.INFO)
+    
+    # Add handler to root logger
+    root_logger.addHandler(console_handler)
+
+# Setup colored logging
+setup_colored_logging()
 
 # Early suppression of verbose loggers before setup_logging
 logging.getLogger("config.project_config").setLevel(logging.WARNING)
@@ -269,7 +321,8 @@ async def main() -> None:
 
 if __name__ == "__main__":
     try:
-        # Configure logging FIRST before importing anything else that might log
+        # Configure colored logging FIRST before importing anything else that might log
+        setup_colored_logging()
         configure_logging(
             debug_mode=os.getenv(
                 "DEBUG_MODE",
