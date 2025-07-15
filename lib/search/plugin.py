@@ -339,7 +339,7 @@ class ModularSearchPlugin:
     async def web_search(
         self,
         query: Annotated[str, "Search query string."],
-        top_k: Annotated[int, "Maximum number of results to return (default 20).", 20] = 20,
+        top_k: Annotated[int, "Maximum number of results to return (default 10).", 10] = 10,
         time_range: Annotated[Optional[Literal["day", "week", "month", "year"]], "Optional time filter. Choices: 'day', 'week', 'month', 'year'."] = None,
         topic: Annotated[Literal["general", "news", "finance"], "Search topic. Choices: 'general', 'news', 'finance'."] = "general",
         search_depth: Annotated[Literal["basic", "advanced"], "Search depth. Choices: 'basic', 'advanced'."] = "advanced",
