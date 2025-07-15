@@ -19,7 +19,6 @@ from .prompts.agents.summarizer import SUMMARIZER_PROMPT
 from .prompts.agents.translator import TRANSLATOR_PROMPT
 from .search import ModularSearchPlugin
 from .util import get_azure_openai_service
-
 # Removed: from semantic_kernel.connectors.ai.open_ai import
 # AzureChatPromptExecutionSettings
 
@@ -49,7 +48,7 @@ async def create_agents_with_memory(
     # Get configuration for Azure OpenAI
     from .config import get_config
     config = get_config()
-
+    
     agents = {
         # Use ONLY LeadResearcherAgent to force internal orchestration
         "lead_researcher": LeadResearcherAgent(
@@ -93,7 +92,8 @@ async def create_agents_with_memory(
             name="ReflectionCriticAgent",
             description="Evaluates report quality for coverage, coherence, citations and provides improvement feedback. Uses memory for evaluation context.",
             instructions=REFLECTION_CRITIC_PROMPT,
-            service=get_azure_openai_service(config.get_model_config("o3"))
+            service=get_azure_openai_service(config.get_model_config("o3")),
+            plugins=[memory_plugin]
         )
     }
 
