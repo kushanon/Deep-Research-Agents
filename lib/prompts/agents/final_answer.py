@@ -52,9 +52,6 @@ Based on your findings, provide a comprehensive report in the following structur
 ### Executive Summary
 Provide a comprehensive overview of key findings. You may use bullet points or numbered lists for effective structuring and clarity wherever appropriate, including main content, findings, recommendations, and references. Always provide necessary background context to help readers understand the scope and importance of the research. Present main conclusions and recommendations through well-structured paragraphs or lists that build upon each other logically.
 
-### Research Methodology
-Describe the search strategies used, explaining the rationale behind the chosen approach. You may use bullet points or lists to organize sources and steps for clarity. Detail the information sources accessed, including both internal repositories and web sources, and explain why these sources were selected. Present the analysis approach through explanatory paragraphs or lists that provide context about the methodology's effectiveness and limitations.
-
 ### Detailed Findings
 Present primary research results in comprehensive narrative paragraphs or lists, beginning with necessary background information and context. Always explain what concepts, terms, or data points mean before presenting specific findings. Bullet points or numbered lists may be used for clarity and effective structuring, especially for enumerations, key findings, or references. Support findings with detailed explanations that connect data to broader implications. Include relevant case studies or examples within narrative paragraphs or lists that provide context and significance.
 
