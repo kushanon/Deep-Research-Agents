@@ -414,6 +414,7 @@ class AzureSearchProvider(SearchProvider):
 
         # Get content_fields from project config for this document type
         content_fields = self._get_content_fields_for_document_type(document_type)
+        logger.debug(f"Content fields for {document_type.value}: {content_fields}")
 
         for result in search_results:
             # Extract content text using configured content_fields
@@ -490,12 +491,15 @@ class AzureSearchProvider(SearchProvider):
 
         # Get key_fields from project config to determine filterable fields
         key_fields = self._get_key_fields_for_document_type(document_type)
+        logger.debug(f"Key fields for {document_type.value}: {key_fields}")
         
         # Extract multimodal identifiers from key_fields and result
         multimodal_fields = []
         for field in key_fields:
             if any(identifier in field.lower() for identifier in ['text_document_id', 'image_document_id', 'content_id']):
                 multimodal_fields.append(field)
+        
+        logger.debug(f"Multimodal fields detected from key_fields: {multimodal_fields}")
         
         # Add configured multimodal fields to metadata
         for field in multimodal_fields:
@@ -575,13 +579,16 @@ class AzureSearchProvider(SearchProvider):
         
         for field in content_priority:
             if field in content_fields and field in result and result[field]:
+                logger.debug(f"Selected main content field: '{field}' (priority match)")
                 return str(result[field])
         
         # Use first available content field
         for field in content_fields:
             if field in result and result[field]:
+                logger.debug(f"Selected main content field: '{field}' (first available)")
                 return str(result[field])
         
+        logger.debug("No suitable content field found for main content")
         return ""
 
     def _extract_configured_fields(self, result: Dict[str, Any], search_result: SearchResult, content_fields: List[str]) -> None:
@@ -614,6 +621,8 @@ class AzureSearchProvider(SearchProvider):
         for field in content_fields:
             if any(location_term in field.lower() for location_term in ['location', 'metadata', 'page', 'polygon']):
                 location_fields.append(field)
+        
+        logger.debug(f"Location fields detected from content_fields: {location_fields}")
         
         # Extract location metadata
         for field in location_fields:

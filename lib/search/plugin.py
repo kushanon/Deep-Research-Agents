@@ -3,9 +3,9 @@ Semantic Kernel plugin wrapper for the modular search system.
 Dynamically generates search functions based on project configuration.
 """
 import json
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 import logging
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict
 
 from semantic_kernel.functions import kernel_function
 
@@ -29,6 +29,9 @@ class ModularSearchPlugin:
 
         # Generate dynamic search functions based on project config
         self._generate_dynamic_functions()
+
+        # Configure web search function based on configuration
+        self._configure_web_search_function()
 
         logger.info("Modular Search Plugin initialized with dynamic functions")
     
@@ -70,6 +73,59 @@ class ModularSearchPlugin:
                     setattr(self, 'search_internal_all_documents', self._original_search_internal_all_documents)
                     del self._original_search_internal_all_documents
                 del self._search_internal_all_documents_decorated
+
+    def _configure_web_search_function(self):
+        """Enable or disable web_search function based on configuration."""
+        web_search_enabled = False
+        
+        try:
+            # Check if web search is enabled in configuration
+            from lib.config.project_config import get_project_config
+            project_config = get_project_config()
+            if project_config and hasattr(project_config, 'web_search'):
+                web_search_enabled = project_config.web_search.enabled
+            logger.info(f"Web search enabled from config: {web_search_enabled}")
+        except Exception as e:
+            logger.warning(f"Could not load web search configuration, defaulting to disabled: {e}")
+        
+        if web_search_enabled:
+            # Only add kernel_function decorator if enabled
+            if not hasattr(self, '_web_search_decorated'):
+                # Store the original method before decoration
+                original_method = self.web_search_impl
+                
+                # Create a wrapper function and decorate it
+                async def wrapped_web_search(
+                    query: str,
+                    top_k: int = 10,
+                    time_range: Optional[str] = None,
+                    topic: str = "general",
+                    search_depth: str = "advanced",
+                    include_image_descriptions: bool = False
+                ) -> str:
+                    return await original_method(
+                        query, top_k, time_range, topic, search_depth, include_image_descriptions
+                    )
+                
+                decorated = kernel_function(
+                    name="web_search",
+                    description="Perform comprehensive web search using external API with advanced filtering and image support. Returns top results from the web only, not internal documents."
+                )(wrapped_web_search)
+                
+                # Store the original method for restoration
+                self._original_web_search = original_method
+                
+                # Replace the method with the decorated version
+                setattr(self, 'web_search', decorated)
+                self._web_search_decorated = True
+        else:
+            # Function calling is disabled - method remains undecorated but still callable
+            if hasattr(self, '_web_search_decorated'):
+                # Restore original method implementation
+                if hasattr(self, '_original_web_search'):
+                    setattr(self, 'web_search', self._original_web_search)
+                    del self._original_web_search
+                del self._web_search_decorated
 
     def _generate_dynamic_functions(self):
         """Generate search functions dynamically based on project configuration."""
@@ -338,21 +394,18 @@ class ModularSearchPlugin:
 
         return result_dict
     
-    @kernel_function(
-        name="web_search",
-        description="Perform comprehensive web search using external API with advanced filtering and image support. Returns top results from the web only, not internal documents."
-    )
-    async def web_search(
+    async def web_search_impl(
         self,
-        query: Annotated[str, "Search query string."],
-        top_k: Annotated[int, "Maximum number of results to return (default 10).", 10] = 10,
-        time_range: Annotated[Optional[Literal["day", "week", "month", "year"]], "Optional time filter. Choices: 'day', 'week', 'month', 'year'."] = None,
-        topic: Annotated[Literal["general", "news", "finance"], "Search topic. Choices: 'general', 'news', 'finance'."] = "general",
-        search_depth: Annotated[Literal["basic", "advanced"], "Search depth. Choices: 'basic', 'advanced'."] = "advanced",
-        include_image_descriptions: Annotated[bool, "Include query-related images and descriptions."] = False
-    ) -> Annotated[str, "JSON string containing search results."]:
+        query: str,
+        top_k: int = 10,
+        time_range: Optional[str] = None,
+        topic: str = "general",
+        search_depth: str = "advanced",
+        include_image_descriptions: bool = False
+    ) -> str:
         """
         Perform web search using external API with enhanced error handling.
+        Implementation method that can be conditionally decorated.
 
         Args:
             query: Search query string
@@ -427,3 +480,20 @@ class ModularSearchPlugin:
             error_msg = f"Web search failed: {str(e)}"
             logger.error(error_msg)
             return json.dumps([{"error": error_msg}], ensure_ascii=False)
+
+    async def web_search(
+        self,
+        query: str,
+        top_k: int = 10,
+        time_range: Optional[str] = None,
+        topic: str = "general",
+        search_depth: str = "advanced",
+        include_image_descriptions: bool = False
+    ) -> str:
+        """
+        Web search method that may or may not be decorated based on configuration.
+        Falls back to implementation method.
+        """
+        return await self.web_search_impl(
+            query, top_k, time_range, topic, search_depth, include_image_descriptions
+        )
