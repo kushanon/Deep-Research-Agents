@@ -37,6 +37,9 @@ class ModularSearchPlugin:
         if getattr(self, '_internal_functions_enabled', False):
             # Only add kernel_function decorator if enabled
             if not hasattr(self, '_search_internal_all_documents_decorated'):
+                # Store the original method before decoration
+                original_method = self.search_internal_all_documents
+                
                 # Create a wrapper function and decorate it
                 async def wrapped_search_internal_all_documents(
                     query: str,
@@ -44,7 +47,7 @@ class ModularSearchPlugin:
                     use_hybrid_search: bool = None,
                     use_semantic_search: bool = None
                 ) -> str:
-                    return await self.search_internal_all_documents(
+                    return await original_method(
                         query, top_k_per_source, use_hybrid_search, use_semantic_search
                     )
                 
@@ -53,6 +56,9 @@ class ModularSearchPlugin:
                     description="Search across all internal document types using hybrid vector and semantic search"
                 )(wrapped_search_internal_all_documents)
                 
+                # Store the original method for restoration
+                self._original_search_internal_all_documents = original_method
+                
                 # Replace the method with the decorated version
                 setattr(self, 'search_internal_all_documents', decorated)
                 self._search_internal_all_documents_decorated = True
@@ -60,9 +66,9 @@ class ModularSearchPlugin:
             # Function calling is disabled - method remains undecorated but still callable
             if hasattr(self, '_search_internal_all_documents_decorated'):
                 # Restore original method implementation
-                original_method = self.__class__.search_internal_all_documents
-                # Bind the unbound method to this instance
-                setattr(self, 'search_internal_all_documents', original_method.__get__(self, self.__class__))
+                if hasattr(self, '_original_search_internal_all_documents'):
+                    setattr(self, 'search_internal_all_documents', self._original_search_internal_all_documents)
+                    del self._original_search_internal_all_documents
                 del self._search_internal_all_documents_decorated
 
     def _generate_dynamic_functions(self):
