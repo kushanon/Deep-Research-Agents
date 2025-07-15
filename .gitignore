@@ -1,0 +1,7 @@
+*/**/*.jpg
+*/**/*.pyc
+docs/
+debug_logs/
+agent_logs/
+report*
+config/project_config.yaml
