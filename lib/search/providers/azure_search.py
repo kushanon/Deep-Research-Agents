@@ -117,6 +117,30 @@ class AzureSearchProvider(SearchProvider):
             # If not found, return None
             return None
 
+    def _get_content_fields_for_document_type(self, document_type: DocumentType) -> List[str]:
+        """Get content_fields configuration for specific document type."""
+        if not self.project_config:
+            return []
+        
+        document_type_value = getattr(document_type, 'value', str(document_type))
+        for doc_type_config in self.project_config.document_types:
+            if doc_type_config.name == document_type_value:
+                return doc_type_config.content_fields
+        
+        return []
+
+    def _get_key_fields_for_document_type(self, document_type: DocumentType) -> List[str]:
+        """Get key_fields configuration for specific document type."""
+        if not self.project_config:
+            return []
+        
+        document_type_value = getattr(document_type, 'value', str(document_type))
+        for doc_type_config in self.project_config.document_types:
+            if doc_type_config.name == document_type_value:
+                return doc_type_config.key_fields
+        
+        return []
+
     async def search(
         self,
         query: SearchQuery,
@@ -388,9 +412,12 @@ class AzureSearchProvider(SearchProvider):
                 # empty list for testing
                 return []
 
+        # Get content_fields from project config for this document type
+        content_fields = self._get_content_fields_for_document_type(document_type)
+
         for result in search_results:
-            # Extract content text
-            content_text = result.get("content_text") or result.get("chunk")
+            # Extract content text using configured content_fields
+            content_text = self._extract_content_text(result, content_fields)
             if not content_text:
                 continue
 
@@ -401,27 +428,14 @@ class AzureSearchProvider(SearchProvider):
                 search_mode=search_mode.value
             )
 
-            # Add document title from result data
-            if "document_title" in result:
-                search_result.document_title = result["document_title"]
-
-            # Add optional fields
-            if "content_path" in result:
-                search_result.content_path = result["content_path"]
+            # Extract all configured content fields
+            self._extract_configured_fields(result, search_result, content_fields)
 
             # Enhanced multimodal metadata extraction
-            self._extract_multimodal_metadata(result, search_result)
+            self._extract_multimodal_metadata(result, search_result, document_type)
 
-            # Location metadata (enhanced for multimodal)
-            if "locationMetadata" in result and result["locationMetadata"]:
-                location_meta = result["locationMetadata"]
-                if "pageNumber" in location_meta:
-                    search_result.page_number = location_meta["pageNumber"]
-                if "boundingPolygons" in location_meta:
-                    # Add bounding polygon information for image location
-                    if search_result.metadata is None:
-                        search_result.metadata = {}
-                    search_result.metadata["boundingPolygons"] = location_meta["boundingPolygons"]
+            # Extract location metadata using configured fields
+            self._extract_location_metadata(result, search_result, content_fields)
 
             # Search scores
             if "@search.score" in result:
@@ -438,27 +452,22 @@ class AzureSearchProvider(SearchProvider):
             # Document type-specific metadata extraction
             metadata = getattr(document_type, 'get_metadata', lambda: {})()
             if metadata and metadata.get('category') == 'list':
-                result_metadata = {}
+                # Extract all available fields from content_fields configuration
+                structured_metadata = {}
+                
+                for field in content_fields:
+                    if field in result and result[field] is not None:
+                        structured_metadata[field] = result[field]
 
-                # Get field mappings from project config (abstracted)
-                try:
-                    if self.project_config:
-                        fields = self.project_config.get_field_mappings(
-                            "target_fields")
-
-                        for field in fields:
-                            if field in result:
-                                result_metadata[field] = result[field]
-
-                        if result_metadata:
-                            if search_result.metadata is None:
-                                search_result.metadata = {}
-                            search_result.metadata.update(result_metadata)
-                except Exception as e:
-                    logger.warning(f"Failed to extract metadata: {e}")
+                if structured_metadata:
+                    if search_result.metadata is None:
+                        search_result.metadata = {}
+                    search_result.metadata.update(structured_metadata)
+                    logger.debug(f"Extracted structured metadata: {list(structured_metadata.keys())}")
 
             results.append(search_result)
 
+        logger.info(f"Processed {len(results)} search results using configuration-driven field extraction")
         return results
 
     def _get_search_type_name(self, document_type: DocumentType) -> str:
@@ -474,41 +483,41 @@ class AzureSearchProvider(SearchProvider):
         return getattr(document_type, 'value', str(document_type))
 
     def _extract_multimodal_metadata(
-            self, result: Dict[str, Any], search_result: SearchResult) -> None:
+            self, result: Dict[str, Any], search_result: SearchResult, document_type: DocumentType) -> None:
         """Extract multimodal-specific metadata from search results."""
         if search_result.metadata is None:
             search_result.metadata = {}
+
+        # Get key_fields from project config to determine filterable fields
+        key_fields = self._get_key_fields_for_document_type(document_type)
+        
+        # Extract multimodal identifiers from key_fields and result
+        multimodal_fields = []
+        for field in key_fields:
+            if any(identifier in field.lower() for identifier in ['text_document_id', 'image_document_id', 'content_id']):
+                multimodal_fields.append(field)
+        
+        # Add configured multimodal fields to metadata
+        for field in multimodal_fields:
+            if field in result and result[field] is not None:
+                search_result.metadata[field] = result[field]
 
         # Identify content type based on document IDs
         has_text_content = result.get("text_document_id") is not None
         has_image_content = result.get("image_document_id") is not None
 
-        if has_text_content:
+        if has_text_content and not has_image_content:
             search_result.metadata["content_type"] = "text"
-            search_result.metadata["text_document_id"] = result["text_document_id"]
-        elif has_image_content:
+        elif has_image_content and not has_text_content:
             search_result.metadata["content_type"] = "image"
-            search_result.metadata["image_document_id"] = result["image_document_id"]
-
             # Add image verbalization indicator
             if "content_text" in result:
                 search_result.metadata["is_image_verbalization"] = True
                 search_result.metadata["description"] = "Image content described in natural language"
-        else:
+        elif has_text_content and has_image_content:
             search_result.metadata["content_type"] = "mixed"
-
-        # Add content_id for traceability
-        if "content_id" in result:
-            search_result.metadata["content_id"] = result["content_id"]
-
-        # Add additional multimodal fields
-        multimodal_fields = [
-            "text_document_id",
-            "image_document_id",
-            "content_path"]
-        for field in multimodal_fields:
-            if field in result and result[field] is not None:
-                search_result.metadata[field] = result[field]
+        else:
+            search_result.metadata["content_type"] = "unknown"
 
         # Log multimodal content detection
         content_type = search_result.metadata.get("content_type", "unknown")
@@ -558,3 +567,86 @@ class AzureSearchProvider(SearchProvider):
                     f"(images: {include_images}, text: {include_text})")
 
         return filtered_results
+
+    def _extract_content_text(self, result: Dict[str, Any], content_fields: List[str]) -> str:
+        """Extract main content text using configured content_fields."""
+        # Priority order for main content (generic field names only)
+        content_priority = ["content_text", "chunk", "text", "description", "content"]
+        
+        for field in content_priority:
+            if field in content_fields and field in result and result[field]:
+                return str(result[field])
+        
+        # Use first available content field
+        for field in content_fields:
+            if field in result and result[field]:
+                return str(result[field])
+        
+        return ""
+
+    def _extract_configured_fields(self, result: Dict[str, Any], search_result: SearchResult, content_fields: List[str]) -> None:
+        """Extract all configured content fields into search result."""
+        if search_result.metadata is None:
+            search_result.metadata = {}
+        
+        # Extract all content_fields into metadata
+        extracted_fields = {}
+        for field in content_fields:
+            if field in result and result[field] is not None:
+                extracted_fields[field] = result[field]
+                
+                # Set specific fields to SearchResult properties if they match
+                if field == "document_title":
+                    search_result.document_title = result[field]
+                elif field == "content_path":
+                    search_result.content_path = result[field]
+        
+        # Add all extracted fields to metadata
+        search_result.metadata["extracted_fields"] = extracted_fields
+        
+        # Log what fields were extracted
+        logger.debug(f"Extracted fields: {list(extracted_fields.keys())}")
+
+    def _extract_location_metadata(self, result: Dict[str, Any], search_result: SearchResult, content_fields: List[str]) -> None:
+        """Extract location metadata using configured content fields."""
+        # Look for location-related fields in content_fields
+        location_fields = []
+        for field in content_fields:
+            if any(location_term in field.lower() for location_term in ['location', 'metadata', 'page', 'polygon']):
+                location_fields.append(field)
+        
+        # Extract location metadata
+        for field in location_fields:
+            if field in result and result[field] is not None:
+                if field == "locationMetadata" and isinstance(result[field], dict):
+                    # Handle nested locationMetadata
+                    location_meta = result[field]
+                    if "pageNumber" in location_meta:
+                        search_result.page_number = location_meta["pageNumber"]
+                    if "boundingPolygons" in location_meta:
+                        if search_result.metadata is None:
+                            search_result.metadata = {}
+                        search_result.metadata["boundingPolygons"] = location_meta["boundingPolygons"]
+                    # Add entire locationMetadata to metadata
+                    if search_result.metadata is None:
+                        search_result.metadata = {}
+                    search_result.metadata["locationMetadata"] = location_meta
+                elif field == "pageNumber":
+                    # Direct page number field
+                    search_result.page_number = result[field]
+                elif field == "boundingPolygons":
+                    # Direct bounding polygons field
+                    if search_result.metadata is None:
+                        search_result.metadata = {}
+                    search_result.metadata["boundingPolygons"] = result[field]
+                else:
+                    # Other location-related fields
+                    if search_result.metadata is None:
+                        search_result.metadata = {}
+                    search_result.metadata[field] = result[field]
+
+        # Log location metadata extraction
+        if hasattr(search_result, 'page_number') and search_result.page_number:
+            logger.debug(f"Extracted page number: {search_result.page_number}")
+        if search_result.metadata and any(key in search_result.metadata for key in ['boundingPolygons', 'locationMetadata']):
+            logger.debug("Extracted location metadata information")
