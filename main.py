@@ -13,7 +13,7 @@ from semantic_kernel.agents import (MagenticOrchestration,
                                     StandardMagenticManager)
 from semantic_kernel.agents.runtime import InProcessRuntime
 from semantic_kernel.utils.logging import setup_logging
-
+from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettings
 
 class ColoredFormatter(logging.Formatter):
     """Custom formatter that adds colors to log messages based on log level."""
@@ -190,6 +190,7 @@ class DeepResearchAgent:
             self.memory_plugin = MemoryPlugin(memory_manager)
             logger.info("💾 Memory system initialized")
             # Create all agents with memory support
+            reasoning_high_settings =  AzureChatPromptExecutionSettings(reasoning_effort="high")
             logger.info("🤖 Creating 7 research agents...")
             agents_dict = await create_agents_with_memory(
                 memory_plugin=self.memory_plugin
@@ -208,6 +209,7 @@ class DeepResearchAgent:
                         config.get_model_config("o3")),
                     system_prompt=MANAGER_PROMPT,
                     final_answer_prompt=FINAL_ANSWER_PROMPT,
+                    prompt_execution_settings=reasoning_high_settings,
                 ),
                 agent_response_callback=dbg)
 
