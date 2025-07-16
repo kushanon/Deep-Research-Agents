@@ -22,6 +22,7 @@ data_sources:
   document_types:
     # Required for search functionality - minimal configuration
     category_a_documents:
+      func_description: "カテゴリーAのドキュメントを検索します。XXXに関する情報を取得できます。"
       index_name: "search-index-source-1"                               # Azure AI Search index name
       semantic_config: "search-index-source-1-semantic-configuration"   # Semantic search configuration
       vector_field: "content_embedding"                                   # Vector search field
@@ -36,6 +37,7 @@ data_sources:
         - "analysis_details"
     
     category_b_documents:
+      func_description: "カテゴリーBのドキュメントを検索します。XXXに関する情報を取得できます。"
       index_name: "search-index-source-2"                           # Azure AI Search index name
       semantic_config: "search-index-source-2-semantic-configuration" # Semantic search configuration
       vector_field: "content_embedding"                                   # Vector search field
@@ -50,6 +52,7 @@ data_sources:
         - "analysis_details"
     
     category_c_documents:
+      func_description: "カテゴリーCのドキュメントを検索します。XXXに関する情報を取得できます。"
       index_name: "search-index-source-3"                                # Azure AI Search index name
       semantic_config: "search-index-source-3-semantic-configuration"  # Semantic search configuration
       vector_field: "text_vector"                                       # Vector search field
@@ -62,6 +65,7 @@ data_sources:
         - "text"
     
     category_d_documents:
+      func_description: "カテゴリーDのドキュメントを検索します。XXXに関する情報を取得できます。"
       index_name: "search-index-source-4"                         # Azure AI Search index name
       semantic_config: "search-index-source-4-semantic-configuration" # Semantic search configuration
       vector_field: "content_embedding"                                 # Vector search field
@@ -79,11 +83,17 @@ agents:
   temperature_variations:
     conservative:
       temp: 0.2
+      approach: "Conservative detailed analysis"
+      description: "Thorough fact-based analysis with focus on accuracy"
     balanced:
       temp: 0.6
+      approach: "Balanced analysis"
+      description: "Comprehensive analysis balancing facts and insights"
     creative:
       temp: 0.9
-  
+      approach: "Creative analysis"
+      description: "Innovative analysis exploring multiple perspectives"
+
   # Credibility critic assessment (used by credibility critic agent)
   credibility_critic:
     assessment:

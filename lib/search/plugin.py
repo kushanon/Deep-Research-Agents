@@ -186,24 +186,47 @@ class ModularSearchPlugin:
                 'use_semantic_search': True
             }
 
-        # Create description with document type information and query examples
-        description_parts = [
-            f"Search for {doc_type_config.display_name} ({doc_type_config.display_name_en}) "
-            f"using hybrid (vector + semantic) search. "
-            f"Available filterable fields: {', '.join(doc_type_config.key_fields)}. "
+        # Create description using func_description from configuration
+        description_parts = {}
+        
+        # Use func_description if available, otherwise fallback to default format
+        if hasattr(doc_type_config, 'func_description') and doc_type_config.func_description:
+            description_parts['main'] = doc_type_config.func_description
+            logger.debug(f"Function {func_name}: Using func_description from config: '{doc_type_config.func_description}'")
+        else:
+            description_parts['main'] = (
+                f"Search for {doc_type_config.display_name} ({doc_type_config.display_name_en}) "
+                f"using hybrid (vector + semantic) search."
+            )
+            logger.debug(f"Function {func_name}: Using default main description (no func_description found)")
+        
+        # Add technical details
+        description_parts['technical'] = (
+            f" Available filterable fields: {', '.join(doc_type_config.key_fields)}. "
             f"NOTE: Date filtering is NOT supported - use content-based search for time-related queries."
-        ]
-
+        )
+        logger.debug(f"Function {func_name}: Added technical description with {len(doc_type_config.key_fields)} filterable fields")
+        
         # Add query examples if available
-        if search_example_config and search_example_config.get(
-                'query_examples'):
+        if search_example_config and search_example_config.get('query_examples'):
             # Limit to first 3 examples
             examples = search_example_config['query_examples'][:3]
             examples_str = '", "'.join(examples)
-            description_parts.append(f" Example queries: \"{examples_str}\"")
+            description_parts['examples'] = f" Example queries: \"{examples_str}\""
+            logger.debug(f"Function {func_name}: Added {len(examples)} query examples")
+        else:
+            description_parts['examples'] = ""
+            logger.debug(f"Function {func_name}: No query examples available")
 
-        description = "".join(description_parts)
+        # Log all description parts before combining
+        logger.debug(f"Function {func_name}: Description parts - Main: {len(description_parts['main'])} chars, "
+                    f"Technical: {len(description_parts['technical'])} chars, "
+                    f"Examples: {len(description_parts['examples'])} chars")
 
+        # Combine all parts into final description
+        description = description_parts['main'] + description_parts['technical'] + description_parts['examples']
+        logger.debug(f"Function {func_name}: Final description length: {len(description)} chars")
+        logger.debug(f"Function {func_name}: Final description: {description}")
         # Create the search function with defaults from configuration
         async def search_function(
             query: str,

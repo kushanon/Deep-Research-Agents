@@ -38,6 +38,7 @@ class DocumentTypeConfig:
     name: str = ""
     display_name: str = ""
     display_name_en: str = ""
+    func_description: str = ""
     index_name: str = ""
     semantic_config: str = ""
     vector_field: str = ""
@@ -321,6 +322,7 @@ class ProjectConfig:
                 name=name,
                 display_name=config.get('display_name', ''),
                 display_name_en=config.get('display_name_en', ''),
+                func_description=config.get('func_description', ''),
                 index_name=config['index_name'],
                 semantic_config=config['semantic_config'],
                 vector_field=config['vector_field'],
