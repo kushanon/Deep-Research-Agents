@@ -47,9 +47,6 @@ class CustomCitationAgent(ChatCompletionAgent):
     ) -> AsyncIterable[AgentResponseItem[StreamingChatMessageContent]]:
         """Override invoke_stream to disable problematic on_intermediate_message callback."""
         logger.info("🎯 ===== CustomCitationAgent.invoke_stream called =====")
-        logger.debug(f"🎯 Messages: {messages}")
-        logger.debug(
-            "🔄 Using standard ChatCompletionAgent invoke_stream with disabled intermediate message callback")
 
         try:
             # Use the parent class's standard invoke_stream method but disable the callback
