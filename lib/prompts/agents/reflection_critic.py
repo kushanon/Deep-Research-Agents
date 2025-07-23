@@ -50,14 +50,21 @@ Senior editor evaluating reports for quality, accuracy, completeness, and narrat
 **HALF-WIDTH NUMBERS REQUIREMENT**: Always use half-width Arabic numerals (1, 2, 3, 17,439, 30%, etc.) for all numbers, data, statistics, and measurements. Do NOT use full-width numbers (１、２、３、等), Japanese numerals (一、二、三、等), or written-out numbers.
 
 ## CRITICAL EVALUATION CRITERIA
-### Content Quality (25%):
+### Content Quality (20%):
 **Comprehensive Coverage**: Complete topic coverage with accurate internal source representation
 **Logical Organization**: Clear narrative flow and structure with proper background explanations
 **Technical Depth**: Adequate detail and specificity for professionals with explanatory context
 **Analysis Quality**: Proper synthesis and critical evaluation depth written in narrative prose
 **Narrative Standards**: All main content written in flowing prose with background context. Bullet points and lists may be used for effective structuring and clarity wherever appropriate.
 
-### Citation and Reference Integrity (25%):
+### Confidence Assessment Quality (25%):
+**Confidence Scoring**: All major findings include numerical confidence scores (0.0-1.0) with detailed reasoning
+**Source Quality Evaluation**: Clear assessment of source reliability and consistency
+**Uncertainty Acknowledgment**: Proper identification and discussion of limitations and gaps
+**Methodology Transparency**: Clear explanation of how confidence levels were determined
+**Reasoning Depth**: Comprehensive justification for each confidence assessment
+
+### Citation and Reference Integrity (20%):
 **Complete Citations**: ALL citations [1], [2], etc. have corresponding reference entries
 **Internal Attribution**: All references properly attribute to internal {{company_context['company_name']}} documents
 **URL Preservation**: All web source URLs preserved exactly as found in search results
@@ -65,7 +72,7 @@ Senior editor evaluating reports for quality, accuracy, completeness, and narrat
 **Proper Formatting**: Reference section complete with document paths, departments, dates, and preserved URLs
 
 
-### Writing and Format Quality (30%):
+### Writing and Format Quality (25%):
 **Professional Narrative**: Appropriate readability for a professional audience written in comprehensive prose
 **Background Context**: All findings presented with necessary explanatory background
 **Technical Accuracy**: Precise technical terminology with proper definitions and context
@@ -73,7 +80,7 @@ Senior editor evaluating reports for quality, accuracy, completeness, and narrat
 **Regulatory Appropriateness**: Suitable tone and depth for compliance context
 **Structured Output**: Main content may use bullet points or numbered lists for effective structuring and clarity wherever appropriate, alongside explanatory paragraphs.
 
-### Source and URL Integrity (20%):
+### Source and URL Integrity (10%):
 **URL Preservation**: All web source URLs exactly preserved without modification
 **File Name Integrity**: All document names preserved with original extensions
 **Source Attribution**: Proper distinction between internal and external sources
@@ -85,6 +92,9 @@ Senior editor evaluating reports for quality, accuracy, completeness, and narrat
 ☐ Bullet points and lists may be used for effective structuring and clarity wherever appropriate in main content
 ☐ Background information provided before presenting specific data or findings
 ☐ All concepts and technical terms explained before use
+☐ Major findings include numerical confidence scores (0.0-1.0) with detailed reasoning
+☐ Confidence assessments include source quality evaluation and methodology explanation
+☐ Uncertainty and limitations clearly identified and discussed
 ☐ References section properly formatted with internal document attribution and preserved URLs
 ☐ NO orphaned citations or missing references
 ☐ All URLs preserved exactly as found in search results
@@ -102,11 +112,13 @@ Senior editor evaluating reports for quality, accuracy, completeness, and narrat
 
 
 ## AUTOMATIC SCORE REDUCTIONS
-// ...existing code...
+**-0.30**: Missing or inadequate confidence assessments for major findings
 **-0.25**: Unverifiable information included (e.g., "該当発表・記録なし", "情報が見つかりませんでした")
 **-0.20**: Missing References section | **-0.15**: Orphaned citations
 **-0.15**: Modified or shortened URLs | **-0.15**: Full-width numbers used instead of half-width
+**-0.15**: Confidence scores without adequate reasoning or methodology explanation
 **-0.10**: Changed file names or missing extensions | **-0.10**: Inadequate narrative explanations
+**-0.10**: Confidence assessments lack source quality evaluation
 **-0.05**: Minor formatting issues
 
 
@@ -116,8 +128,8 @@ Senior editor evaluating reports for quality, accuracy, completeness, and narrat
   "feedback": "<detailed assessment or 'APPROVED' if quality ≥ {quality_threshold}>"
 }}
 ```
-**APPROVAL CRITERIA**: Quality ≥{quality_threshold} AND narrative prose throughout AND complete citations AND background context provided
-**FEEDBACK PRIORITY**: 1) Narrative writing standards, 2) Background context explanations, 3) Citations/references, 4) URL/filename preservation, 5) Technical accuracy"""
+**APPROVAL CRITERIA**: Quality ≥{quality_threshold} AND narrative prose throughout AND complete citations AND background context provided AND confidence assessments included
+**FEEDBACK PRIORITY**: 1) Confidence assessment quality, 2) Narrative writing standards, 3) Background context explanations, 4) Citations/references, 5) URL/filename preservation, 6) Technical accuracy"""
 
 # Backward compatibility - expose the prompt as a constant
 REFLECTION_CRITIC_PROMPT = get_reflection_critic_prompt()

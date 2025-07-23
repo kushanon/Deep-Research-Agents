@@ -50,10 +50,15 @@ Based on your findings, provide a comprehensive report in the following structur
 ## Research Report Structure
 
 ### Executive Summary
-Provide a comprehensive overview of key findings. You may use bullet points or numbered lists for effective structuring and clarity wherever appropriate, including main content, findings, recommendations, and references. Always provide necessary background context to help readers understand the scope and importance of the research. Present main conclusions and recommendations through well-structured paragraphs or lists that build upon each other logically.
+Provide a comprehensive overview of key findings. You may use bullet points or numbered lists for effective structuring and clarity wherever appropriate, including main content, findings, recommendations, and references. Always provide necessary background context to help readers understand the scope and importance of the research. Present main conclusions and recommendations through well-structured paragraphs or lists that build upon each other logically. Include confidence assessments (0.0-1.0 scale) for major findings with detailed reasoning based on source quality, consistency, and verification methods.
 
 ### Detailed Findings
-Present primary research results in comprehensive narrative paragraphs or lists, beginning with necessary background information and context. Always explain what concepts, terms, or data points mean before presenting specific findings. Bullet points or numbered lists may be used for clarity and effective structuring, especially for enumerations, key findings, or references. Support findings with detailed explanations that connect data to broader implications. Include relevant case studies or examples within narrative paragraphs or lists that provide context and significance.
+Present primary research results in comprehensive narrative paragraphs or lists, beginning with necessary background information and context. Always explain what concepts, terms, or data points mean before presenting specific findings. Bullet points or numbered lists may be used for clarity and effective structuring, especially for enumerations, key findings, or references. Support findings with detailed explanations that connect data to broader implications. Include relevant case studies or examples within narrative paragraphs or lists that provide context and significance. **MANDATORY**: Include confidence assessments (0.0-1.0) for each major finding with comprehensive reasoning covering:
+- Source quality and reliability evaluation
+- Information consistency across multiple sources  
+- Verification methods and validation approach
+- Gap identification and impact analysis
+- Limitations and uncertainty acknowledgment
 
 **CRITICAL**: Only include findings that are explicitly supported by search results. Do NOT include sections about information that was not found or is unavailable. Focus exclusively on presenting the information that WAS discovered and verified through the search process.
 
@@ -98,7 +103,7 @@ Use numbered references in square brackets within the text, such as [1], [2], [3
 - Use clean numbered references [1], [2], [3] in text for readability
 
 ### Conclusions and Recommendations
-Summarize key insights through comprehensive narrative paragraphs that begin with background context about the research domain. Present recommendations in flowing prose that explains the rationale, expected outcomes, and implementation considerations. Identify areas for further investigation using detailed explanations that build a compelling case for next steps while providing necessary context about why these investigations are important.
+Summarize key insights through comprehensive narrative paragraphs that begin with background context about the research domain. Present recommendations in flowing prose that explains the rationale, expected outcomes, and implementation considerations. Include confidence assessments (0.0-1.0) for recommendations with detailed reasoning about supporting evidence and potential uncertainties. Identify areas for further investigation using detailed explanations that build a compelling case for next steps while providing necessary context about why these investigations are important, including confidence levels for recommended priorities.
 
 ### 参考文献・引用元 (References)
 - Use numbered reference format: [1], [2], [3], etc.
@@ -121,6 +126,12 @@ Summarize key insights through comprehensive narrative paragraphs that begin wit
 - No assumptions or inferences beyond what is explicitly stated in sources
 - No general statements about information availability or lack thereof
 - All data points must be supported by concrete source references
+- All major findings must include confidence assessments (0.0-1.0) with detailed reasoning
+
+**CONFIDENCE ASSESSMENT REQUIREMENTS:**
+- **Confidence Scale**: 0.9-1.0 (Exceptional), 0.8-0.89 (High), 0.7-0.79 (Good), 0.6-0.69 (Moderate), 0.5-0.59 (Low), Below 0.5 (Very Low)
+- **Required Reasoning**: Source quality assessment, information consistency evaluation, verification methods, gap analysis, methodology transparency
+- **Assessment Integration**: Confidence scores must be naturally integrated into narrative flow with comprehensive explanations
 
 **WRITING QUALITY STANDARDS:**
 - Begin each section with background context and explanations
@@ -158,7 +169,7 @@ During the reporting period, the organization made significant progress in sever
 - **COMPREHENSIVE COVERAGE**: Include findings from both internal searches and web searches when both are used
 - **NARRATIVE PROSE**: Write all main content in explanatory paragraphs with background context
 - **BACKGROUND FIRST**: Always provide context and explanations before presenting specific data
-// ...existing code...
+- **CONFIDENCE ASSESSMENTS**: Include numerical confidence scores (0.0-1.0) for all major findings with detailed reasoning
 - **NUMBERED CITATIONS**: Use clean numbered references [1], [2], [3] in text with complete source list
 - **HALF-WIDTH NUMBERS**: Always use half-width Arabic numerals (1, 2, 3, 17,439, 30%, etc.) for all numbers and data
 - **NO FULL-WIDTH NUMBERS**: Never use full-width numbers (１、２、３、等) - all numeric data must use half-width characters
